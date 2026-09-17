@@ -28,6 +28,7 @@ const TagManagement = () => import('../views/TagManagement.vue')
 const PrivateWhitelist = () => import('../views/PrivateWhitelist.vue')
 const RedeemCodes = () => import('../views/RedeemCodes.vue')
 const RedeemPage = () => import('../views/RedeemPage.vue')
+const UrlImport = () => import('../views/UrlImport.vue')
 
 
 interface RouteMeta extends Record<string | number | symbol, unknown> {
@@ -133,6 +134,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'redeem',
         component: RedeemPage,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'url-import',
+        component: UrlImport,
         meta: {
           requiresAuth: true,
           requiredRole: 'user'
@@ -255,6 +264,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'redeem-codes',
         component: RedeemCodes,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'url-import',
+        component: UrlImport,
         meta: {
           requiresAuth: true,
           requiredRole: 'admin'

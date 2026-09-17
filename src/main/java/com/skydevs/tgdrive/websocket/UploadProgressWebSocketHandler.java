@@ -9,6 +9,7 @@ import org.springframework.web.socket.*;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -169,5 +170,59 @@ public class UploadProgressWebSocketHandler implements WebSocketHandler {
         private String type;
         private String fileName;
         private String error;
+    }
+
+    // ========== URL导入进度消息 ==========
+
+    @Data
+    public static class ImportProgressMessage {
+        private String type = "import_progress";
+        private String fileName;
+        private int currentIndex;
+        private int total;
+        private int completed;
+        private int failed;
+        private String status; // downloading, uploading, completed, failed
+    }
+
+    @Data
+    public static class ImportStartMessage {
+        private String type = "import_start";
+        private int total;
+    }
+
+    @Data
+    public static class ImportCompleteMessage {
+        private String type = "import_complete";
+        private int total;
+        private int completed;
+        private int failed;
+        private List<String> failedUrls;
+    }
+
+    public void sendImportStart(int total) {
+        ImportStartMessage msg = new ImportStartMessage();
+        msg.setTotal(total);
+        broadcastMessage(msg);
+    }
+
+    public void sendImportProgress(String fileName, int currentIndex, int total, int completed, int failed, String status) {
+        ImportProgressMessage msg = new ImportProgressMessage();
+        msg.setFileName(fileName);
+        msg.setCurrentIndex(currentIndex);
+        msg.setTotal(total);
+        msg.setCompleted(completed);
+        msg.setFailed(failed);
+        msg.setStatus(status);
+        broadcastMessage(msg);
+    }
+
+    public void sendImportComplete(int total, int completed, int failed, List<String> failedUrls) {
+        ImportCompleteMessage msg = new ImportCompleteMessage();
+        msg.setTotal(total);
+        msg.setCompleted(completed);
+        msg.setFailed(failed);
+        msg.setFailedUrls(failedUrls);
+        broadcastMessage(msg);
     }
 }

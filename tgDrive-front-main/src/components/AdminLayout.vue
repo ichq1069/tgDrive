@@ -82,6 +82,10 @@
             <el-icon><Picture /></el-icon>
             <template #title>画廊</template>
           </el-menu-item>
+          <el-menu-item index="/url-import">
+            <el-icon><Link /></el-icon>
+            <template #title>URL 导入</template>
+          </el-menu-item>
           <el-menu-item index="/private-whitelist">
             <el-icon><User /></el-icon>
             <template #title>私密库白名单</template>
@@ -169,6 +173,10 @@
             <el-icon><Picture /></el-icon>
             <template #title>画廊</template>
           </el-menu-item>
+          <el-menu-item index="/url-import">
+            <el-icon><Link /></el-icon>
+            <template #title>URL 导入</template>
+          </el-menu-item>
           <el-menu-item index="/private-whitelist">
             <el-icon><User /></el-icon>
             <template #title>私密库白名单</template>
@@ -228,7 +236,7 @@ import { ref, computed, onMounted, onBeforeUnmount, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   HomeFilled, Folder, Top, EditPen, Sunny, Moon, Expand, Fold, Download, Monitor, SwitchButton, Service, Connection, Setting, User,
-  Box, Share, Lock, PriceTag, Picture, Ticket
+  Box, Share, Lock, PriceTag, Picture, Ticket, Link
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 

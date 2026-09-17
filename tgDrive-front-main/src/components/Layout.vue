@@ -45,6 +45,7 @@
                 <el-dropdown-item command="shared" :icon="Share">共享库</el-dropdown-item>
                 <el-dropdown-item v-if="isPrivateAuthorized" command="private" :icon="Lock">私密库</el-dropdown-item>
                 <el-dropdown-item command="gallery" :icon="Picture">画廊</el-dropdown-item>
+                <el-dropdown-item command="url-import" :icon="Link">URL 导入</el-dropdown-item>
                 <el-dropdown-item command="upload" :icon="Upload">上传文件</el-dropdown-item>
                 <el-dropdown-item command="password" :icon="Lock">修改密码</el-dropdown-item>
               </el-dropdown-menu>
@@ -122,7 +123,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { Sunny, Moon, Cloudy, Monitor, SwitchButton, Menu, Folder, Upload, Lock, Box, Share, Picture } from '@element-plus/icons-vue'
+import { Sunny, Moon, Cloudy, Monitor, SwitchButton, Menu, Folder, Upload, Lock, Box, Share, Picture, Link } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -333,6 +334,9 @@ const handleNavCommand = (command: string) => {
       break
     case 'gallery':
       goToGallery()
+      break
+    case 'url-import':
+      router.push('/user/url-import')
       break
   }
 }
