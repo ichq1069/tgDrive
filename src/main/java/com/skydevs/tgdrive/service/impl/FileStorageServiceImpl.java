@@ -1,5 +1,6 @@
 package com.skydevs.tgdrive.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
@@ -14,6 +15,7 @@ import com.skydevs.tgdrive.entity.FileInfo;
 import com.skydevs.tgdrive.exception.user.InsufficientPermissionException;
 import com.skydevs.tgdrive.exception.file.UploadFileIsNullException;
 import com.skydevs.tgdrive.mapper.FileMapper;
+import com.skydevs.tgdrive.mapper.TagMapper;
 import com.skydevs.tgdrive.result.PageResult;
 import com.skydevs.tgdrive.service.FileStorageService;
 import com.skydevs.tgdrive.service.TelegramBotService;
@@ -53,6 +55,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FileStorageServiceImpl implements FileStorageService {
     @Autowired
     private FileMapper fileMapper;
+
+    @Autowired
+    private TagMapper tagMapper;
 
     @Autowired
     private TelegramBotService telegramBotService;
@@ -97,6 +102,7 @@ public class FileStorageServiceImpl implements FileStorageService {
                         .downloadUrl(downloadUrl)
                         .fileName(filename)
                         .userId(userId)
+                        .library("tele")
                         .build();
                 fileMapper.insertFile(fileInfo);
             } catch (IOException e) {
@@ -365,6 +371,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
         if ("admin".equals(role) || (file.getUserId() != null && file.getUserId().equals(userId))) {
             try {
+                tagMapper.deleteAssociationsByFileId(fileId);
                 fileMapper.deleteFile(fileId);
                 log.info("文件删除成功，fileId: {}", fileId);
             } catch (Exception e) {

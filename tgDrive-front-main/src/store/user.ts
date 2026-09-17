@@ -29,6 +29,8 @@ export interface UserInfo {
   username: string
   email: string
   tokenExpireAt: number | null
+  memberLevel?: string
+  privateAuthorized?: boolean
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -39,6 +41,8 @@ export const useUserStore = defineStore('user', () => {
   const username = ref<string>('')
   const email = ref<string>('')
   const tokenExpireAt = ref<number | null>(null)
+  const memberLevel = ref<string>('pt')
+  const privateAuthorized = ref<boolean>(false)
 
   // 计算属性
   const isLoggedIn = computed(() => {
@@ -60,6 +64,8 @@ export const useUserStore = defineStore('user', () => {
     userId.value = localStorage.getItem('userId') || ''
     username.value = localStorage.getItem('username') || ''
     email.value = localStorage.getItem('email') || ''
+    memberLevel.value = localStorage.getItem('memberLevel') || 'pt'
+    privateAuthorized.value = localStorage.getItem('privateAuthorized') === 'true'
     const storedExpireAt = localStorage.getItem('tokenExpireAt')
     if (storedExpireAt) {
       const parsed = Number(storedExpireAt)
@@ -77,6 +83,8 @@ export const useUserStore = defineStore('user', () => {
     username.value = userInfo.username
     email.value = userInfo.email
     tokenExpireAt.value = userInfo.tokenExpireAt ?? null
+    memberLevel.value = userInfo.memberLevel || 'pt'
+    privateAuthorized.value = userInfo.privateAuthorized || false
 
     // 同步到localStorage
     localStorage.setItem('token', userInfo.token)
@@ -84,6 +92,8 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('userId', userInfo.userId)
     localStorage.setItem('username', userInfo.username)
     localStorage.setItem('email', userInfo.email)
+    localStorage.setItem('memberLevel', memberLevel.value)
+    localStorage.setItem('privateAuthorized', String(privateAuthorized.value))
     if (tokenExpireAt.value !== null) {
       localStorage.setItem('tokenExpireAt', String(tokenExpireAt.value))
     } else {
@@ -99,6 +109,8 @@ export const useUserStore = defineStore('user', () => {
     username.value = ''
     email.value = ''
     tokenExpireAt.value = null
+    memberLevel.value = 'pt'
+    privateAuthorized.value = false
 
     // 清除localStorage
     localStorage.removeItem('token')
@@ -107,6 +119,8 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('username')
     localStorage.removeItem('email')
     localStorage.removeItem('tokenExpireAt')
+    localStorage.removeItem('memberLevel')
+    localStorage.removeItem('privateAuthorized')
   }
 
   // 注册全局清除方法
@@ -120,6 +134,8 @@ export const useUserStore = defineStore('user', () => {
     username,
     email,
     tokenExpireAt,
+    memberLevel,
+    privateAuthorized,
     // 计算属性
     isLoggedIn,
     userRoleText,

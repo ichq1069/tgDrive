@@ -63,7 +63,7 @@ public interface UserMapper {
      * 
      * @param user 用户信息
      */
-    @Insert("INSERT INTO users (username, password, role, email, last_login_time) VALUES (#{username}, #{password}, #{role}, #{email}, #{lastLoginTime})")
+    @Insert("INSERT INTO users (username, password, role, email, last_login_time, member_level) VALUES (#{username}, #{password}, #{role}, #{email}, #{lastLoginTime}, #{memberLevel})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(User user);
 
@@ -91,4 +91,7 @@ public interface UserMapper {
      */
     @Update("UPDATE users SET last_login_time = #{lastLoginTime} WHERE id = #{userId}")
     void updateLastLoginTime(@Param("userId") Long userId, @Param("lastLoginTime") String lastLoginTime);
+
+    @Update("UPDATE users SET member_level = #{memberLevel} WHERE id = #{userId}")
+    void updateMemberLevel(@Param("userId") Long userId, @Param("memberLevel") String memberLevel);
 }

@@ -4,6 +4,7 @@ import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
 import com.skydevs.tgdrive.exception.BaseException;
+import com.skydevs.tgdrive.exception.HttpStatusException;
 import com.skydevs.tgdrive.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
@@ -19,6 +20,15 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    /**
+     * HTTP 状态码业务异常：带真实 HTTP status
+     */
+    @ExceptionHandler(HttpStatusException.class)
+    public org.springframework.http.ResponseEntity<Result<String>> handleHttpStatusException(HttpStatusException ex) {
+        log.warn("业务异常: {} status={}", ex.getMessage(), ex.getStatus().value());
+        return org.springframework.http.ResponseEntity.status(ex.getStatus()).body(Result.error(ex.getMessage()));
+    }
 
     /**
      * 业务异常处理

@@ -156,7 +156,9 @@ const handleLogin = () => {
           userId: userLogin.UserId,
           username: userLogin.username,
           email: userLogin.email,
-          tokenExpireAt: userLogin.expireAt ?? null
+          tokenExpireAt: userLogin.expireAt ?? null,
+          memberLevel: userLogin.memberLevel ?? 'pt',
+          privateAuthorized: userLogin.privateAuthorized ?? false
         })
 
         if (rememberMe.value) {

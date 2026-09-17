@@ -87,12 +87,17 @@
             <el-tag :type="getRoleTagType(scope.row.role)">{{ getRoleText(scope.row.role) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="memberLevel" label="会员等级" width="100" align="center">
+          <template #default="scope">
+            <el-tag :type="getMemberLevelTagType(scope.row.memberLevel)" size="small">{{ getMemberLevelText(scope.row.memberLevel) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="lastLoginTime" label="最后上线时间" width="180" align="center">
           <template #default="scope">
             {{ scope.row.lastLoginTime || '从未登录' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" align="center" fixed="right">
+        <el-table-column label="操作" width="350" align="center" fixed="right">
           <template #default="scope">
             <el-button-group>
               <el-button 
@@ -103,6 +108,14 @@
                 :disabled="scope.row.username === 'visitor'"
               >
                 设角色
+              </el-button>
+              <el-button 
+                type="success" 
+                size="small" 
+                @click="openSetLevelDialog(scope.row)"
+                :disabled="scope.row.username === 'visitor'"
+              >
+                设等级
               </el-button>
               <el-button 
                 type="warning" 
@@ -263,6 +276,39 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 设置会员等级对话框 -->
+    <el-dialog
+      v-model="setLevelDialogVisible"
+      title="设置会员等级"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="用户名">
+          <el-input :model-value="setLevelForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="当前等级">
+          <el-tag :type="getMemberLevelTagType(setLevelForm.currentLevel)">{{ getMemberLevelText(setLevelForm.currentLevel) }}</el-tag>
+        </el-form-item>
+        <el-form-item label="新等级">
+          <el-select v-model="setLevelForm.newLevel" placeholder="请选择新等级" style="width: 100%">
+            <el-option label="PT" value="pt" />
+            <el-option label="VIP" value="vip" />
+            <el-option label="SVIP" value="svip" />
+            <el-option label="VVIP" value="vvip" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="setLevelDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmSetLevel" :loading="setLevelLoading">
+            确定
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -309,6 +355,11 @@ const setRoleDialogVisible = ref(false)
 const setRoleLoading = ref(false)
 const setRoleFormRef = ref<FormInstance>()
 const selectedUser = ref<UserItem | null>(null)
+
+// 会员等级管理
+const setLevelDialogVisible = ref(false)
+const setLevelLoading = ref(false)
+const setLevelForm = ref({ username: '', currentLevel: 'pt', newLevel: 'pt', userId: 0 })
 
 // 用户统计数据
 const totalUsers = ref(0)
@@ -394,6 +445,26 @@ const getRoleText = (role: string) => {
       return '访客'
     default:
       return role
+  }
+}
+
+const getMemberLevelTagType = (level: string) => {
+  switch (level) {
+    case 'vvip': return 'danger'
+    case 'svip': return 'warning'
+    case 'vip': return 'success'
+    case 'pt':
+    default: return 'info'
+  }
+}
+
+const getMemberLevelText = (level: string) => {
+  switch (level) {
+    case 'vvip': return 'VVIP'
+    case 'svip': return 'SVIP'
+    case 'vip': return 'VIP'
+    case 'pt':
+    default: return 'PT'
   }
 }
 
@@ -549,6 +620,54 @@ const confirmSetRole = async () => {
     }
   } finally {
     setRoleLoading.value = false
+  }
+}
+
+const openSetLevelDialog = (user: UserItem) => {
+  setLevelForm.value = {
+    username: user.username,
+    currentLevel: (user as any).memberLevel || 'pt',
+    newLevel: (user as any).memberLevel || 'pt',
+    userId: user.id
+  }
+  setLevelDialogVisible.value = true
+}
+
+const confirmSetLevel = async () => {
+  if (setLevelForm.value.newLevel === setLevelForm.value.currentLevel) {
+    ElMessage.warning('新等级与当前等级相同')
+    return
+  }
+
+  const levelOrder = ['pt', 'vip', 'svip', 'vvip']
+  const isDemotion = levelOrder.indexOf(setLevelForm.value.newLevel) < levelOrder.indexOf(setLevelForm.value.currentLevel)
+
+  if (isDemotion) {
+    try {
+      await ElMessageBox.confirm(
+        `确定将用户 "${setLevelForm.username}" 的会员等级从 ${getMemberLevelText(setLevelForm.value.currentLevel)} 降级到 ${getMemberLevelText(setLevelForm.value.newLevel)}？`,
+        '降级确认',
+        { type: 'warning', confirmButtonText: '确定降级', cancelButtonText: '取消' }
+      )
+    } catch {
+      return
+    }
+  }
+
+  setLevelLoading.value = true
+  try {
+    const res = await request.put(`/admin/users/${setLevelForm.value.userId}/level`, { level: setLevelForm.value.newLevel })
+    if (res.data?.code === 1) {
+      ElMessage.success('会员等级设置成功')
+      setLevelDialogVisible.value = false
+      fetchUserList()
+    } else {
+      ElMessage.error(res.data?.msg || '设置失败')
+    }
+  } catch (e: any) {
+    ElMessage.error('设置失败: ' + (e?.response?.data?.msg || e.message))
+  } finally {
+    setLevelLoading.value = false
   }
 }
 

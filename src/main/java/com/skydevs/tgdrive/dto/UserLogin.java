@@ -16,4 +16,6 @@ public class UserLogin {
     private String username;
     private String email;
     private Long expireAt;
+    private String memberLevel;
+    private boolean privateAuthorized;
 }

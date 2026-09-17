@@ -3,10 +3,16 @@ package com.skydevs.tgdrive.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.pengrad.telegrambot.model.File;
 import com.skydevs.tgdrive.entity.BigFileInfo;
+import com.skydevs.tgdrive.entity.FileInfo;
+import com.skydevs.tgdrive.entity.User;
+import com.skydevs.tgdrive.exception.ForbiddenException;
+import com.skydevs.tgdrive.exception.ResourceNotFoundException;
+import com.skydevs.tgdrive.exception.UnauthorizedException;
 import com.skydevs.tgdrive.exception.bot.BotNotSetException;
 import com.skydevs.tgdrive.mapper.FileMapper;
 import com.skydevs.tgdrive.service.DownloadService;
 import com.skydevs.tgdrive.service.FileStorageService;
+import com.skydevs.tgdrive.service.LibraryAccessService;
 import com.skydevs.tgdrive.service.TelegramBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +46,7 @@ public class DownloadServiceImpl implements DownloadService {
     private final FileStorageService fileStorageService;
     private final TelegramBotService telegramBotService;
     private final FileMapper fileMapper;
+    private final LibraryAccessService libraryAccessService;
 
     // 优化的HTTP客户端配置
     private final OkHttpClient okHttpClient = new OkHttpClient.Builder()
@@ -60,6 +67,17 @@ public class DownloadServiceImpl implements DownloadService {
      */
     @Override
     public ResponseEntity<StreamingResponseBody> downloadFile(String fileID) {
+        FileInfo fileInfo = fileMapper.getFileByFileId(fileID);
+        if (fileInfo == null) {
+            throw new ResourceNotFoundException("文件不存在");
+        }
+        User user = libraryAccessService.getCurrentUserOrNull();
+        if (!libraryAccessService.canDownload(fileInfo, user)) {
+            if (user == null) {
+                throw new UnauthorizedException("请先登录后再下载");
+            }
+            throw new ForbiddenException("无权下载此文件");
+        }
         try (InputStream inputStream = downloadFileInputStream(fileID);
              ByteArrayOutputStream buffer = new ByteArrayOutputStream()){
             byte[] data = new byte[8192];

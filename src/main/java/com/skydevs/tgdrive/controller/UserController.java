@@ -4,7 +4,11 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.skydevs.tgdrive.dto.*;
 import com.skydevs.tgdrive.entity.User;
+import com.skydevs.tgdrive.exception.ForbiddenException;
+import com.skydevs.tgdrive.mapper.WhitelistMapper;
 import com.skydevs.tgdrive.result.Result;
+import com.skydevs.tgdrive.service.LibraryAccessService;
+import com.skydevs.tgdrive.service.MemberService;
 import com.skydevs.tgdrive.service.SettingService;
 import com.skydevs.tgdrive.service.UserService;
 import jakarta.validation.Valid;
@@ -22,6 +26,8 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final SettingService settingService;
+    private final MemberService memberService;
+    private final LibraryAccessService libraryAccessService;
 
     /**
      * 用户登入
@@ -53,6 +59,8 @@ public class UserController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .expireAt(expireAt)
+                .memberLevel(user.getMemberLevel())
+                .privateAuthorized(libraryAccessService.isPrivateAuthorized(user))
                 .build();
 
         log.info(user.getId() + "登入");
@@ -157,5 +165,35 @@ public class UserController {
             log.error("管理员删除用户失败: {}", e.getMessage());
             return Result.error(e.getMessage());
         }
+    }
+
+    /**
+     * 获取当前用户信息
+     */
+    @GetMapping("/me")
+    public Result<MeProfile> me() {
+        User user = libraryAccessService.requireCurrentUser();
+        MeProfile profile = MeProfile.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .memberLevel(user.getMemberLevel())
+                .privateAuthorized(libraryAccessService.isPrivateAuthorized(user))
+                .build();
+        return Result.success(profile);
+    }
+
+    /**
+     * 管理员设置用户会员等级
+     */
+    @SaCheckRole("admin")
+    @PutMapping("/admin/users/{id}/level")
+    public Result<String> updateMemberLevel(
+            @PathVariable Long id,
+            @RequestBody UpdateMemberLevelRequest request) {
+        memberService.updateMemberLevel(id, request.getMemberLevel(),
+                Boolean.TRUE.equals(request.getConfirmDemote()));
+        return Result.success("会员等级更新成功");
     }
 }

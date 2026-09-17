@@ -13,6 +13,6 @@ public class SaTokenConfigure implements WebMvcConfigurer {
         // 注册 Sa-Token 拦截器
         registry.addInterceptor(new SaInterceptor())
                 .addPathPatterns("/**")
-                .excludePathPatterns("/login"); // 放行登录接口
+                .excludePathPatterns("/login", "/d/**"); // 放行登录接口和下载接口（鉴权在 DownloadServiceImpl 内部处理）
     }
 }

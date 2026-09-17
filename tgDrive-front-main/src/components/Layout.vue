@@ -25,6 +25,10 @@
           <!-- 普通用户导航 - 大屏幕显示按钮 -->
           <div v-if="isLoggedIn && userRole === 'user'" class="user-nav-desktop">
             <el-button type="text" @click="goToUserHome">我的文件</el-button>
+            <el-button type="text" @click="goToTeleLibrary">Tele 库</el-button>
+            <el-button type="text" @click="goToSharedLibrary">共享库</el-button>
+            <el-button v-if="isPrivateAuthorized" type="text" @click="goToPrivateLibrary">私密库</el-button>
+            <el-button type="text" @click="goToGallery">画廊</el-button>
             <el-button type="text" @click="goToUpload">上传文件</el-button>
             <el-button type="text" @click="goToChangePassword">修改密码</el-button>
           </div>
@@ -37,6 +41,10 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="home" :icon="Folder">我的文件</el-dropdown-item>
+                <el-dropdown-item command="tele" :icon="Box">Tele 库</el-dropdown-item>
+                <el-dropdown-item command="shared" :icon="Share">共享库</el-dropdown-item>
+                <el-dropdown-item v-if="isPrivateAuthorized" command="private" :icon="Lock">私密库</el-dropdown-item>
+                <el-dropdown-item command="gallery" :icon="Picture">画廊</el-dropdown-item>
                 <el-dropdown-item command="upload" :icon="Upload">上传文件</el-dropdown-item>
                 <el-dropdown-item command="password" :icon="Lock">修改密码</el-dropdown-item>
               </el-dropdown-menu>
@@ -114,7 +122,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { Sunny, Moon, Cloudy, Monitor, SwitchButton, Menu, Folder, Upload, Lock } from '@element-plus/icons-vue'
+import { Sunny, Moon, Cloudy, Monitor, SwitchButton, Menu, Folder, Upload, Lock, Box, Share, Picture } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -130,6 +138,7 @@ const userRole = computed(() => userStore.role)
 const currentUsername = computed(() => userStore.username || '用户')
 const currentEmail = computed(() => userStore.email || '')
 const userRoleText = computed(() => userStore.userRoleText)
+const isPrivateAuthorized = computed(() => userStore.privateAuthorized)
 
 // 当前激活的菜单项
 const activeIndex = computed(() => {
@@ -271,6 +280,26 @@ const goToChangePassword = () => {
   router.push('/user/changePassword')
 }
 
+// 导航到 Tele 库
+const goToTeleLibrary = () => {
+  router.push('/user/tele')
+}
+
+// 导航到共享库
+const goToSharedLibrary = () => {
+  router.push('/user/shared')
+}
+
+// 导航到私密库
+const goToPrivateLibrary = () => {
+  router.push('/user/private')
+}
+
+// 导航到画廊
+const goToGallery = () => {
+  router.push('/user/gallery')
+}
+
 // 导航到用户协议页面
 const goToAgreement = () => {
   router.push('/agreement')
@@ -292,6 +321,18 @@ const handleNavCommand = (command: string) => {
       break
     case 'password':
       goToChangePassword()
+      break
+    case 'tele':
+      goToTeleLibrary()
+      break
+    case 'shared':
+      goToSharedLibrary()
+      break
+    case 'private':
+      goToPrivateLibrary()
+      break
+    case 'gallery':
+      goToGallery()
       break
   }
 }

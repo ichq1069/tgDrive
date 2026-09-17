@@ -27,5 +27,15 @@ public class FileInfo {
     private boolean isPublic = false;
     
     private String uploader; // 上传者用户名
+
+    private String library = "tele";
+
+    private String contentLevel;
+
+    private boolean inRandomPool;
+
+    private Long poolFolderId;
+
+    private java.util.List<String> tags;
 }
 

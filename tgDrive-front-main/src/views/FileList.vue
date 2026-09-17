@@ -55,6 +55,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="size" label="大小" width="120" align="center" />
+        <el-table-column prop="library" label="库" width="90" align="center">
+          <template #default="scope">
+            <el-tag :type="getLibraryTagType(scope.row.library)" size="small">{{ getLibraryText(scope.row.library) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="uploadTime" label="上传时间" width="180" align="center">
           <template #default="scope">
             {{ formatUploadTime(scope.row.uploadTime) }}
@@ -393,6 +398,24 @@ const batchDeleteFiles = async () => {
 const formatUploadTime = (timestamp: number) => {
   return new Date(timestamp * 1000).toLocaleString('zh-CN', { hour12: false });
 };
+
+const getLibraryTagType = (library: string) => {
+  switch (library) {
+    case 'shared': return 'success'
+    case 'private': return 'danger'
+    case 'tele':
+    default: return 'info'
+  }
+}
+
+const getLibraryText = (library: string) => {
+  switch (library) {
+    case 'shared': return '共享'
+    case 'private': return '私密'
+    case 'tele':
+    default: return 'Tele'
+  }
+}
 
 const openUpdateDialog = () => {
   isDialogVisible.value = true;

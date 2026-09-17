@@ -20,6 +20,14 @@ const WebDavConfigPage = () => import('../views/WebDavConfigPage.vue');
 const UserManagement = () => import('../views/UserManagement.vue');
 const UserAgreementPage = () => import('@/views/UserAgreementPage.vue')
 const PrivacyPolicyPage = () => import('@/views/PrivacyPolicyPage.vue')
+const TeleLibrary = () => import('../views/TeleLibrary.vue')
+const SharedLibrary = () => import('../views/SharedLibrary.vue')
+const PrivateLibrary = () => import('../views/PrivateLibrary.vue')
+const Gallery = () => import('../views/Gallery.vue')
+const TagManagement = () => import('../views/TagManagement.vue')
+const PrivateWhitelist = () => import('../views/PrivateWhitelist.vue')
+const RedeemCodes = () => import('../views/RedeemCodes.vue')
+const RedeemPage = () => import('../views/RedeemPage.vue')
 
 
 interface RouteMeta extends Record<string | number | symbol, unknown> {
@@ -89,6 +97,46 @@ const routes: Array<RouteRecordRaw> = [
           requiresAuth: true,
           requiredRole: 'user'
         } as RouteMeta
+      },
+      {
+        path: 'tele',
+        component: TeleLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'shared',
+        component: SharedLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'private',
+        component: PrivateLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'gallery',
+        component: Gallery,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'redeem',
+        component: RedeemPage,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
       }
     ]
   },
@@ -151,6 +199,62 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'user-management',
         component: UserManagement,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'tele-library',
+        component: TeleLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'shared-library',
+        component: SharedLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'private-library',
+        component: PrivateLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'gallery',
+        component: Gallery,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'tags',
+        component: TagManagement,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'private-whitelist',
+        component: PrivateWhitelist,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'redeem-codes',
+        component: RedeemCodes,
         meta: {
           requiresAuth: true,
           requiredRole: 'admin'

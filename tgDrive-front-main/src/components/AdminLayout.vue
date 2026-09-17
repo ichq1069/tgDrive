@@ -62,6 +62,34 @@
             <el-icon><Folder /></el-icon>
             <template #title>文件列表</template>
           </el-menu-item>
+          <el-menu-item index="/tele-library">
+            <el-icon><Box /></el-icon>
+            <template #title>Tele 库</template>
+          </el-menu-item>
+          <el-menu-item index="/shared-library">
+            <el-icon><Share /></el-icon>
+            <template #title>共享库</template>
+          </el-menu-item>
+          <el-menu-item index="/private-library">
+            <el-icon><Lock /></el-icon>
+            <template #title>私密库</template>
+          </el-menu-item>
+          <el-menu-item index="/tags">
+            <el-icon><PriceTag /></el-icon>
+            <template #title>标签管理</template>
+          </el-menu-item>
+          <el-menu-item index="/gallery">
+            <el-icon><Picture /></el-icon>
+            <template #title>画廊</template>
+          </el-menu-item>
+          <el-menu-item index="/private-whitelist">
+            <el-icon><User /></el-icon>
+            <template #title>私密库白名单</template>
+          </el-menu-item>
+          <el-menu-item index="/redeem-codes">
+            <el-icon><Ticket /></el-icon>
+            <template #title>兑换码管理</template>
+          </el-menu-item>
           <el-menu-item index="/user-management">
             <el-icon><User /></el-icon>
             <template #title>用户管理</template>
@@ -121,6 +149,34 @@
             <el-icon><Folder /></el-icon>
             <template #title>文件列表</template>
           </el-menu-item>
+          <el-menu-item index="/tele-library">
+            <el-icon><Box /></el-icon>
+            <template #title>Tele 库</template>
+          </el-menu-item>
+          <el-menu-item index="/shared-library">
+            <el-icon><Share /></el-icon>
+            <template #title>共享库</template>
+          </el-menu-item>
+          <el-menu-item index="/private-library">
+            <el-icon><Lock /></el-icon>
+            <template #title>私密库</template>
+          </el-menu-item>
+          <el-menu-item index="/tags">
+            <el-icon><PriceTag /></el-icon>
+            <template #title>标签管理</template>
+          </el-menu-item>
+          <el-menu-item index="/gallery">
+            <el-icon><Picture /></el-icon>
+            <template #title>画廊</template>
+          </el-menu-item>
+          <el-menu-item index="/private-whitelist">
+            <el-icon><User /></el-icon>
+            <template #title>私密库白名单</template>
+          </el-menu-item>
+          <el-menu-item index="/redeem-codes">
+            <el-icon><Ticket /></el-icon>
+            <template #title>兑换码管理</template>
+          </el-menu-item>
           <el-menu-item index="/user-management">
             <el-icon><User /></el-icon>
             <template #title>用户管理</template>
@@ -171,7 +227,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  HomeFilled, Folder, Top, EditPen, Sunny, Moon, Expand, Fold, Download, Monitor, SwitchButton, Service, Connection, Setting, User
+  HomeFilled, Folder, Top, EditPen, Sunny, Moon, Expand, Fold, Download, Monitor, SwitchButton, Service, Connection, Setting, User,
+  Box, Share, Lock, PriceTag, Picture, Ticket
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 

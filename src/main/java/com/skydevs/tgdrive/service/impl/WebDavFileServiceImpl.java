@@ -1,10 +1,12 @@
 package com.skydevs.tgdrive.service.impl;
 
 import com.skydevs.tgdrive.entity.FileInfo;
+import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.exception.file.FailedToGetSizeException;
 import com.skydevs.tgdrive.mapper.FileMapper;
 import com.skydevs.tgdrive.service.DownloadService;
 import com.skydevs.tgdrive.service.FileStorageService;
+import com.skydevs.tgdrive.service.LibraryAccessService;
 import com.skydevs.tgdrive.service.TelegramBotService;
 import com.skydevs.tgdrive.service.WebDavFileService;
 import com.skydevs.tgdrive.utils.StringUtil;
@@ -31,6 +33,7 @@ public class WebDavFileServiceImpl implements WebDavFileService {
     private final FileStorageService fileStorageService;
     private final TelegramBotService telegramBotService;
     private final DownloadService downloadService;
+    private final LibraryAccessService libraryAccessService;
 
     @Override
     public String uploadByWebDav(InputStream inputStream, HttpServletRequest request) {
@@ -87,6 +90,7 @@ public class WebDavFileServiceImpl implements WebDavFileService {
                     .webdavPath(path)
                     .userId(null) // WebDAV上传暂时不关联用户
                     .isPublic(true) // WebDAV文件默认公开
+                    .library("tele")
                     .build();
             fileMapper.insertFile(fileInfo);
             return fileId;
@@ -140,6 +144,7 @@ public class WebDavFileServiceImpl implements WebDavFileService {
      */
     @Override
     public List<FileInfo> listFiles(String path) {
+        User user = libraryAccessService.getCurrentUserOrNull();
         List<FileInfo> files = fileMapper.getFilesByPathPrefix(path);
         if (files == null) {
             log.error("文件查询失败");
@@ -147,6 +152,9 @@ public class WebDavFileServiceImpl implements WebDavFileService {
         }
         List<FileInfo> res = new ArrayList<>();
         for (FileInfo file : files) {
+            if (!file.isDir() && file.getWebdavPath() != null && !libraryAccessService.canDownload(file, user)) {
+                continue;
+            }
             String str = file.getWebdavPath().substring(path.length());
             if (str.indexOf('/') != -1 && !file.isDir()) {
                 continue;
