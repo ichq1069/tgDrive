@@ -58,7 +58,7 @@ const addUsername = ref('')
 const fetchList = async () => {
   loading.value = true
   try {
-    const res = await request.get('/admin/whitelist')
+    const res = await request.get('/admin/private-whitelist')
     if (res.data?.code === 1) {
       whitelist.value = res.data.data || []
     }
@@ -76,7 +76,7 @@ const addUser = async () => {
   }
   submitLoading.value = true
   try {
-    const res = await request.post('/admin/whitelist', { username: addUsername.value.trim() })
+    const res = await request.post('/admin/private-whitelist', { username: addUsername.value.trim() })
     if (res.data?.code === 1) {
       ElMessage.success('添加成功')
       showAddDialog.value = false
@@ -95,7 +95,7 @@ const addUser = async () => {
 const removeUser = async (userId: number) => {
   try {
     await ElMessageBox.confirm('确定将该用户从白名单移除？', '确认移除', { type: 'warning' })
-    const res = await request.delete(`/admin/whitelist/${userId}`)
+    const res = await request.delete(`/admin/private-whitelist/${userId}`)
     if (res.data?.code === 1) {
       ElMessage.success('移除成功')
       fetchList()
