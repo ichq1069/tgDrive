@@ -11,11 +11,14 @@
             <el-input v-model="searchQuery" placeholder="搜索文件名" clearable style="width: 200px; margin-right: 10px;" @keyup.enter="fetchFiles" />
             <el-button type="primary" @click="fetchFiles" :icon="Search">搜索</el-button>
             <el-button type="default" @click="searchQuery = ''; fetchFiles()" :icon="Refresh">刷新</el-button>
+            <ViewToggle v-model="viewMode" style="margin-left: 10px;" />
           </div>
         </div>
       </template>
 
+      <!-- 表格视图 -->
       <el-table
+        v-if="viewMode === 'table'"
         :data="fileList"
         v-loading="loading"
         @selection-change="handleSelectionChange"
@@ -49,6 +52,23 @@
         </el-table-column>
       </el-table>
 
+      <!-- 网格视图 -->
+      <FileGrid
+        v-else
+        :files="fileList"
+        :selectable="isAdmin"
+        :selected-ids="selectedFiles.map(f => f.fileId)"
+        v-loading="loading"
+        @click="downloadFile"
+        @select="toggleSelect"
+      >
+        <template #actions="{ file }">
+          <el-button type="primary" size="small" @click.stop="copyLink(file)" circle :icon="Link" />
+          <el-button type="warning" size="small" @click.stop="downloadFile(file)" circle :icon="Download" />
+          <el-button v-if="isAdmin" type="info" size="small" @click.stop="restoreToTele(file.fileId)" circle>转回</el-button>
+        </template>
+      </FileGrid>
+
       <div class="footer-toolbar">
         <div v-if="isAdmin" class="batch-actions">
           <el-button type="info" @click="batchRestore" :disabled="selectedFiles.length === 0">批量转回 Tele</el-button>
@@ -73,9 +93,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Share, Search, Refresh, Document } from '@element-plus/icons-vue'
+import { Share, Search, Refresh, Document, Link, Download } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import ViewToggle from '@/components/ViewToggle.vue'
+import FileGrid from '@/components/FileGrid.vue'
 
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.role === 'admin')
@@ -87,6 +109,7 @@ const pageSize = ref(20)
 const totalItems = ref(0)
 const searchQuery = ref('')
 const selectedFiles = ref<any[]>([])
+const viewMode = ref<'grid' | 'table'>('table')
 
 const fetchFiles = async () => {
   loading.value = true
@@ -107,6 +130,15 @@ const fetchFiles = async () => {
 
 const handleSelectionChange = (selection: any[]) => {
   selectedFiles.value = selection
+}
+
+const toggleSelect = (file: any) => {
+  const index = selectedFiles.value.findIndex(f => f.fileId === file.fileId)
+  if (index > -1) {
+    selectedFiles.value.splice(index, 1)
+  } else {
+    selectedFiles.value.push(file)
+  }
 }
 
 const formatTime = (ts: number) => new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false })
@@ -150,3 +182,50 @@ const batchRestore = async () => {
 
 onMounted(() => fetchFiles())
 </script>
+
+<style scoped>
+.page-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.content-card {
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+  margin-top: 10px;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 10px;
+}
+</style>

@@ -71,4 +71,17 @@ public interface TelegramBotService {
      * @param fileId 文件ID
      */
     void deleteFile(Integer fileId);
+
+    /**
+     * 获取Bot信息（用户名等）
+     * @return Bot的User对象
+     */
+    com.pengrad.telegrambot.model.User getMe();
+
+    /**
+     * 获取最近的更新（用于获取群组ID）
+     * @param offset 偏移量，0表示获取所有
+     * @return 更新列表
+     */
+    java.util.List<com.pengrad.telegrambot.model.Update> getUpdates(Integer offset);
 }

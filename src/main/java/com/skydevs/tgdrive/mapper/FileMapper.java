@@ -175,6 +175,18 @@ public interface FileMapper {
     @Update("UPDATE files SET pool_folder_id = NULL WHERE pool_folder_id = #{folderId}")
     void clearPoolFolder(Long folderId);
 
+    /**
+     * 根据文件哈希查找文件（用于去重）
+     */
+    @Select("SELECT * FROM files WHERE file_hash = #{fileHash} LIMIT 1")
+    FileInfo getFileByHash(String fileHash);
+
+    /**
+     * 更新文件哈希
+     */
+    @Update("UPDATE files SET file_hash = #{fileHash} WHERE file_id = #{fileId}")
+    void updateFileHash(@Param("fileId") String fileId, @Param("fileHash") String fileHash);
+
     @SelectProvider(type = FileSqlProvider.class, method = "getLibraryFilesQuery")
     Page<FileInfo> getLibraryFiles(@Param("library") String library,
                                    @Param("keyword") String keyword,

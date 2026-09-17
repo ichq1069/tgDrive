@@ -19,7 +19,7 @@ public class ImportController {
     @PostMapping("/url")
     public Result<String> importFromUrl(@RequestBody UrlImportRequest request) {
         if (request.getUrls() == null || request.getUrls().isEmpty()) {
-            return Result.fail("URL列表不能为空");
+            return Result.error("URL列表不能为空");
         }
         // 异步执行导入任务
         Long userId = StpUtil.getLoginIdAsLong();

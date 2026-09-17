@@ -7,7 +7,10 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.request.SendAudio;
 import com.pengrad.telegrambot.request.SendDocument;
+import com.pengrad.telegrambot.request.SendPhoto;
+import com.pengrad.telegrambot.request.SendVideo;
 import com.pengrad.telegrambot.response.SendResponse;
 import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.entity.BigFileInfo;
@@ -85,8 +88,23 @@ public class FileStorageServiceImpl implements FileStorageService {
                 String filename = multipartFile.getOriginalFilename();
                 long size = multipartFile.getSize();
 
+                // 计算文件哈希值用于去重检测
+                String fileHash = calculateFileHash(multipartFile.getInputStream());
+                
+                // 检查是否已存在相同哈希的文件
+                FileInfo existingFile = fileMapper.getFileByHash(fileHash);
+                if (existingFile != null) {
+                    log.info("检测到重复文件，返回已有记录: {} -> {}", filename, existingFile.getFileId());
+                    uploadFile.setFileName(filename);
+                    uploadFile.setDownloadLink(existingFile.getDownloadUrl());
+                    return uploadFile;
+                }
+                
                 // 使用FileStorageService上传文件
                 String fileID = uploadFile(inputStream, filename, size);
+                
+                // 保存文件哈希到数据库
+                fileMapper.updateFileHash(fileID, fileHash);
                 
                 // 无论大小，上传流程成功后发送完成消息
                 uploadProgressWebSocketHandler.sendUploadComplete(filename);
@@ -103,6 +121,7 @@ public class FileStorageServiceImpl implements FileStorageService {
                         .fileName(filename)
                         .userId(userId)
                         .library("tele")
+                        .fileHash(fileHash)
                         .build();
                 fileMapper.insertFile(fileInfo);
             } catch (IOException e) {
@@ -124,6 +143,55 @@ public class FileStorageServiceImpl implements FileStorageService {
         } else {
             return uploadSmallFile(inputStream, filename);
         }
+    }
+
+    /**
+     * 计算文件SHA-256哈希值（用于去重检测）
+     */
+    private String calculateFileHash(InputStream inputStream) throws IOException {
+        java.security.MessageDigest digest;
+        try {
+            digest = java.security.MessageDigest.getInstance("SHA-256");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            digest.update(buffer, 0, bytesRead);
+        }
+        byte[] hashBytes = digest.digest();
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hashBytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    }
+
+    /**
+     * 检查文件是否为媒体类型
+     */
+    private boolean isImageFile(String filename) {
+        if (filename == null) return false;
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") 
+            || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp");
+    }
+
+    private boolean isVideoFile(String filename) {
+        if (filename == null) return false;
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") 
+            || lower.endsWith(".mov") || lower.endsWith(".avi");
+    }
+
+    private boolean isAudioFile(String filename) {
+        if (filename == null) return false;
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".flac") 
+            || lower.endsWith(".aac") || lower.endsWith(".ogg");
     }
 
     private String uploadLargeFile(InputStream inputStream, String filename, long size) {
@@ -150,7 +218,18 @@ public class FileStorageServiceImpl implements FileStorageService {
                 uploadFilename = filename.substring(0, filename.lastIndexOf(".gif"));
             }
 
-            Message message = sendDocument(inputStream, uploadFilename);
+            // 根据文件类型选择不同的发送方式
+            Message message;
+            if (isImageFile(uploadFilename)) {
+                message = sendPhoto(inputStream, uploadFilename);
+            } else if (isVideoFile(uploadFilename)) {
+                message = sendVideo(inputStream, uploadFilename);
+            } else if (isAudioFile(uploadFilename)) {
+                message = sendAudio(inputStream, uploadFilename);
+            } else {
+                message = sendDocument(inputStream, uploadFilename);
+            }
+            
             String fileID = StringUtil.extractFileId(message);
             Integer messageID=message.messageId();
 
@@ -411,6 +490,10 @@ public class FileStorageServiceImpl implements FileStorageService {
         int retryCount = 3;
         int baseDelay = 1000;
 
+        if (bot == null) {
+            throw new RuntimeException("Telegram Bot 未初始化，请先配置 Bot Token 和 Chat ID");
+        }
+
         for (int i = 0; i < retryCount; i++) {
             try {
                 SendDocument sendDocument = new SendDocument(chatId, fileData).fileName(filename);
@@ -420,13 +503,18 @@ public class FileStorageServiceImpl implements FileStorageService {
                     return response.message();
                 }
 
+                // 记录 Telegram API 返回的具体错误
+                String desc = response != null ? response.description() : "response is null";
+                int errorCode = response != null ? response.errorCode() : -1;
+                log.warn("发送文档失败 [文件: {}, 错误码: {}, 描述: {}], 正在准备第{}次重试",
+                        filename, errorCode, desc, (i + 1));
+
                 int exponentialDelay = baseDelay * (int)Math.pow(2, i);
-                log.warn("发送文档失败，正在准备第{}次重试，等待{}毫秒", (i+1), exponentialDelay);
                 Thread.sleep(exponentialDelay);
             } catch (Exception e) {
+                log.error("发送文档异常 [文件: {}, 第{}次尝试]: {}", filename, (i + 1), e.getMessage());
                 if (i == retryCount - 1) {
-                    log.error("发送文档失败，已达到最大重试次数: {}", e.getMessage());
-                    throw new RuntimeException("发送文档失败，已达到最大重试次数", e);
+                    throw new RuntimeException("发送文档失败，已达到最大重试次数: " + e.getMessage(), e);
                 }
                 try {
                     Thread.sleep((long) baseDelay * (int)Math.pow(2, i));
@@ -457,6 +545,186 @@ public class FileStorageServiceImpl implements FileStorageService {
                 buffer.write(data, 0, byteRead);
             }
             return sendDocument(buffer.toByteArray(), filename);
+        } catch (IOException e) {
+            log.error("读取输入流失败: {}", e.getMessage());
+            throw new RuntimeException("读取输入流失败", e);
+        }
+    }
+
+    /**
+     * 发送图片到Telegram（使用sendPhoto，图片会显示在相册标签中）
+     */
+    private Message sendPhoto(byte[] fileData, String filename) {
+        TelegramBot bot = telegramBotService.getBot();
+        String chatId = telegramBotService.getChatId();
+        int retryCount = 3;
+        int baseDelay = 1000;
+
+        if (bot == null) {
+            throw new RuntimeException("Telegram Bot 未初始化，请先配置 Bot Token 和 Chat ID");
+        }
+
+        for (int i = 0; i < retryCount; i++) {
+            try {
+                SendPhoto sendPhoto = new SendPhoto(chatId, fileData);
+                SendResponse response = bot.execute(sendPhoto);
+
+                if (response != null && response.isOk() && response.message() != null) {
+                    return response.message();
+                }
+
+                String desc = response != null ? response.description() : "response is null";
+                int errorCode = response != null ? response.errorCode() : -1;
+                log.warn("发送图片失败 [文件: {}, 错误码: {}, 描述: {}], 正在准备第{}次重试",
+                        filename, errorCode, desc, (i + 1));
+
+                int exponentialDelay = baseDelay * (int)Math.pow(2, i);
+                Thread.sleep(exponentialDelay);
+            } catch (Exception e) {
+                log.error("发送图片异常 [文件: {}, 第{}次尝试]: {}", filename, (i + 1), e.getMessage());
+                if (i == retryCount - 1) {
+                    throw new RuntimeException("发送图片失败，已达到最大重试次数: " + e.getMessage(), e);
+                }
+                try {
+                    Thread.sleep((long) baseDelay * (int)Math.pow(2, i));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("重试等待被中断", ie);
+                }
+            }
+        }
+
+        throw new RuntimeException("发送图片失败，已达到最大重试次数");
+    }
+
+    private Message sendPhoto(InputStream inputStream, String filename) {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] data = new byte[8192];
+            int byteRead;
+            while ((byteRead = inputStream.read(data)) != -1) {
+                buffer.write(data, 0, byteRead);
+            }
+            return sendPhoto(buffer.toByteArray(), filename);
+        } catch (IOException e) {
+            log.error("读取输入流失败: {}", e.getMessage());
+            throw new RuntimeException("读取输入流失败", e);
+        }
+    }
+
+    /**
+     * 发送视频到Telegram（使用sendVideo，视频会显示在视频标签中）
+     */
+    private Message sendVideo(byte[] fileData, String filename) {
+        TelegramBot bot = telegramBotService.getBot();
+        String chatId = telegramBotService.getChatId();
+        int retryCount = 3;
+        int baseDelay = 1000;
+
+        if (bot == null) {
+            throw new RuntimeException("Telegram Bot 未初始化，请先配置 Bot Token 和 Chat ID");
+        }
+
+        for (int i = 0; i < retryCount; i++) {
+            try {
+                SendVideo sendVideo = new SendVideo(chatId, fileData);
+                SendResponse response = bot.execute(sendVideo);
+
+                if (response != null && response.isOk() && response.message() != null) {
+                    return response.message();
+                }
+
+                String desc = response != null ? response.description() : "response is null";
+                int errorCode = response != null ? response.errorCode() : -1;
+                log.warn("发送视频失败 [文件: {}, 错误码: {}, 描述: {}], 正在准备第{}次重试",
+                        filename, errorCode, desc, (i + 1));
+
+                int exponentialDelay = baseDelay * (int)Math.pow(2, i);
+                Thread.sleep(exponentialDelay);
+            } catch (Exception e) {
+                log.error("发送视频异常 [文件: {}, 第{}次尝试]: {}", filename, (i + 1), e.getMessage());
+                if (i == retryCount - 1) {
+                    throw new RuntimeException("发送视频失败，已达到最大重试次数: " + e.getMessage(), e);
+                }
+                try {
+                    Thread.sleep((long) baseDelay * (int)Math.pow(2, i));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("重试等待被中断", ie);
+                }
+            }
+        }
+
+        throw new RuntimeException("发送视频失败，已达到最大重试次数");
+    }
+
+    private Message sendVideo(InputStream inputStream, String filename) {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] data = new byte[8192];
+            int byteRead;
+            while ((byteRead = inputStream.read(data)) != -1) {
+                buffer.write(data, 0, byteRead);
+            }
+            return sendVideo(buffer.toByteArray(), filename);
+        } catch (IOException e) {
+            log.error("读取输入流失败: {}", e.getMessage());
+            throw new RuntimeException("读取输入流失败", e);
+        }
+    }
+
+    /**
+     * 发送音频到Telegram（使用sendAudio，音频会显示在音频标签中）
+     */
+    private Message sendAudio(byte[] fileData, String filename) {
+        TelegramBot bot = telegramBotService.getBot();
+        String chatId = telegramBotService.getChatId();
+        int retryCount = 3;
+        int baseDelay = 1000;
+
+        if (bot == null) {
+            throw new RuntimeException("Telegram Bot 未初始化，请先配置 Bot Token 和 Chat ID");
+        }
+
+        for (int i = 0; i < retryCount; i++) {
+            try {
+                SendAudio sendAudio = new SendAudio(chatId, fileData);
+                SendResponse response = bot.execute(sendAudio);
+
+                if (response != null && response.isOk() && response.message() != null) {
+                    return response.message();
+                }
+
+                String desc = response != null ? response.description() : "response is null";
+                int errorCode = response != null ? response.errorCode() : -1;
+                log.warn("发送音频失败 [文件: {}, 错误码: {}, 描述: {}], 正在准备第{}次重试",
+                        filename, errorCode, desc, (i + 1));
+
+                int exponentialDelay = baseDelay * (int)Math.pow(2, i);
+                Thread.sleep(exponentialDelay);
+            } catch (Exception e) {
+                log.error("发送音频异常 [文件: {}, 第{}次尝试]: {}", filename, (i + 1), e.getMessage());
+                if (i == retryCount - 1) {
+                    throw new RuntimeException("发送音频失败，已达到最大重试次数: " + e.getMessage(), e);
+                }
+                try {
+                    Thread.sleep((long) baseDelay * (int)Math.pow(2, i));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("重试等待被中断", ie);
+                }
+            }
+        }
+
+        throw new RuntimeException("发送音频失败，已达到最大重试次数");
+    }
+
+    private Message sendAudio(InputStream inputStream, String filename) {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] data = new byte[8192];
+            int byteRead;
+            while ((byteRead = inputStream.read(data)) != -1) {
+                buffer.write(data, 0, byteRead);
+            }
+            return sendAudio(buffer.toByteArray(), filename);
         } catch (IOException e) {
             log.error("读取输入流失败: {}", e.getMessage());
             throw new RuntimeException("读取输入流失败", e);

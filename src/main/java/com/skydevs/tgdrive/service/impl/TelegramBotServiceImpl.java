@@ -2,14 +2,18 @@ package com.skydevs.tgdrive.service.impl;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.File;
+import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.model.request.ReplyKeyboardRemove;
 import com.pengrad.telegrambot.request.DeleteMessage;
 import com.pengrad.telegrambot.request.EditMessageText;
 import com.pengrad.telegrambot.request.GetFile;
+import com.pengrad.telegrambot.request.GetUpdates;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.GetFileResponse;
+import com.pengrad.telegrambot.response.GetMeResponse;
+import com.pengrad.telegrambot.response.GetUpdatesResponse;
 import com.skydevs.tgdrive.dto.ConfigForm;
 import com.skydevs.tgdrive.exception.bot.BotNotSetException;
 import com.skydevs.tgdrive.exception.config.ConfigFileNotFoundException;
@@ -19,6 +23,9 @@ import com.skydevs.tgdrive.service.TelegramBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Telegram Bot服务实现类
@@ -36,7 +43,38 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 
     @Override
     public TelegramBot getBot() {
+        // 如果Bot未初始化，尝试自动初始化
+        if (this.bot == null) {
+            tryInitialize();
+        }
         return this.bot;
+    }
+
+    /**
+     * 尝试自动初始化Bot（从数据库加载最新配置）
+     */
+    private void tryInitialize() {
+        try {
+            List<com.skydevs.tgdrive.dto.ConfigForm> configForms = configService.getForms();
+            if (configForms != null && !configForms.isEmpty()) {
+                // 选择第一个可用的配置
+                com.skydevs.tgdrive.dto.ConfigForm selectedConfig = configForms.get(0);
+                
+                // 优先选择名称包含"default"或"main"的配置
+                for (com.skydevs.tgdrive.dto.ConfigForm config : configForms) {
+                    String configName = config.getName().toLowerCase();
+                    if (configName.contains("default") || configName.contains("main")) {
+                        selectedConfig = config;
+                        break;
+                    }
+                }
+                
+                initializeBot(selectedConfig.getName());
+                log.info("自动初始化Bot成功: {}", selectedConfig.getName());
+            }
+        } catch (Exception e) {
+            log.warn("自动初始化Bot失败: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -118,6 +156,43 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 
         if (!response.isOk()){
             log.error("删除原文件失败: {}， messageId: {}", response.description(), fileId);
+        }
+    }
+
+    @Override
+    public com.pengrad.telegrambot.model.User getMe() {
+        checkBotInitialized();
+        try {
+            GetMeResponse response = bot.execute(new com.pengrad.telegrambot.request.GetMe());
+            if (response.isOk()) {
+                return response.user();
+            }
+            log.error("获取Bot信息失败: {}", response.description());
+            return null;
+        } catch (Exception e) {
+            log.error("获取Bot信息异常: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public java.util.List<Update> getUpdates(Integer offset) {
+        checkBotInitialized();
+        try {
+            GetUpdates request = new GetUpdates();
+            if (offset != null) {
+                request.offset(offset);
+            }
+            request.limit(100);
+            GetUpdatesResponse response = bot.execute(request);
+            if (response.isOk()) {
+                return response.updates();
+            }
+            log.error("获取更新列表失败: {}", response.description());
+            return java.util.Collections.emptyList();
+        } catch (Exception e) {
+            log.error("获取更新列表异常: {}", e.getMessage());
+            return java.util.Collections.emptyList();
         }
     }
 }

@@ -10,6 +10,7 @@
           <div class="header-right">
             <el-button type="primary" @click="fetchRandom" :loading="loading">换一批</el-button>
             <el-input v-model="searchQuery" placeholder="关键词过滤" clearable style="width: 150px; margin-left: 10px;" @keyup.enter="fetchRandom" />
+            <ViewToggle v-model="viewMode" style="margin-left: 10px;" />
           </div>
         </div>
       </template>
@@ -20,7 +21,9 @@
       <div v-else-if="galleryList.length === 0" style="display:flex;align-items:center;justify-content:center;height:400px;color:#999;">
         <span>暂无随机池数据</span>
       </div>
-      <div v-else class="gallery-grid">
+
+      <!-- 网格视图 -->
+      <div v-else-if="viewMode === 'grid'" class="gallery-grid">
         <div v-for="item in galleryList" :key="item.fileId" class="gallery-card" @click="openFile(item)">
           <div class="gallery-thumb">
             <el-icon :size="48"><Document /></el-icon>
@@ -36,6 +39,34 @@
           </div>
         </div>
       </div>
+
+      <!-- 表格视图 -->
+      <el-table
+        v-else
+        :data="galleryList"
+        height="calc(100vh - 280px)"
+        style="width: 100%;"
+      >
+        <el-table-column prop="fileName" label="文件名" min-width="200" show-overflow-tooltip>
+          <template #default="scope">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <el-icon><Document /></el-icon>
+              <span>{{ scope.fileName }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="size" label="大小" width="120" align="center" />
+        <el-table-column label="标签" width="200" align="center">
+          <template #default="scope">
+            <el-tag v-for="tag in parseTags(scope.row.tags)" :key="tag" size="small" type="info" style="margin: 2px;">{{ tag }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" align="center" fixed="right">
+          <template #default="scope">
+            <el-button type="primary" size="small" @click="openFile(scope.row)">下载</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
   </div>
 </template>
@@ -45,10 +76,12 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Picture, Loading, Document } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import ViewToggle from '@/components/ViewToggle.vue'
 
 const galleryList = ref<any[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
+const viewMode = ref<'grid' | 'table'>('grid')
 
 const fetchRandom = async () => {
   loading.value = true
@@ -82,6 +115,37 @@ onMounted(() => fetchRandom())
 </script>
 
 <style scoped>
+.page-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.content-card {
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

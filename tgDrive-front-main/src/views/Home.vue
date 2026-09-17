@@ -55,6 +55,55 @@
       </el-form>
     </el-card>
 
+    <!-- Bot 信息卡片 -->
+    <el-card v-if="botInfo" class="content-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon><User /></el-icon>
+          <span>Bot 信息</span>
+        </div>
+      </template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="用户名">@{{ botInfo.username }}</el-descriptions-item>
+        <el-descriptions-item label="Bot ID">{{ botInfo.id }}</el-descriptions-item>
+        <el-descriptions-item label="可加入群组">{{ botInfo.canJoinGroups ? '是' : '否' }}</el-descriptions-item>
+        <el-descriptions-item label="可读取群消息">{{ botInfo.canReadAllGroupMessages ? '是' : '否' }}</el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+
+    <!-- 群组ID获取 -->
+    <el-card class="content-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>获取群组 ID</span>
+        </div>
+      </template>
+      <div class="chat-id-section">
+        <p class="help-text">点击按钮获取 Bot 所在的群组 ID。请确保已将 Bot 添加到群组并发送过消息。</p>
+        <el-button type="primary" @click="fetchChatIds" :loading="isFetchingChatIds" :disabled="!botInfo" size="large">
+          {{ isFetchingChatIds ? '获取中...' : '获取群组 ID' }}
+        </el-button>
+        
+        <el-collapse-transition>
+          <div v-if="chatIds.length > 0" class="chat-ids-list">
+            <el-divider />
+            <h4>发现的群组/频道：</h4>
+            <div v-for="chat in chatIds" :key="chat.id" class="chat-id-item" @click="selectChatId(chat.id)">
+              <div class="chat-info">
+                <span class="chat-title">{{ chat.title || chat.username || '未知群组' }}</span>
+                <span class="chat-type">{{ chat.type }}</span>
+              </div>
+              <span class="chat-id">{{ chat.id }}</span>
+            </div>
+            <p class="help-text">点击上方群组可自动填入 Chat ID</p>
+          </div>
+        </el-collapse-transition>
+        
+        <el-alert v-if="chatIdsError" :title="chatIdsError" type="info" show-icon :closable="false" style="margin-top: 12px" />
+      </div>
+    </el-card>
+
     <!-- Section for loading existing configs -->
     <el-card class="content-card">
       <template #header>
@@ -112,7 +161,7 @@ import { reactive, ref, onMounted } from 'vue';
 import request from '../utils/request'
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Document, Key, ChatDotRound, Link, Lock, Setting, Files } from '@element-plus/icons-vue';
+import { Document, Key, ChatDotRound, Link, Lock, Setting, Files, User } from '@element-plus/icons-vue';
 
 interface ConfigForm {
   name: string;
@@ -120,6 +169,23 @@ interface ConfigForm {
   target: string;
   url?: string;
   pass?: string;
+}
+
+interface BotInfo {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  canJoinGroups: boolean;
+  canReadAllGroupMessages: boolean;
+  supportsInlineQueries: boolean;
+}
+
+interface ChatInfo {
+  id: number;
+  title: string;
+  type: string;
+  username: string;
 }
 
 const ruleFormRef = ref<FormInstance>();
@@ -140,11 +206,56 @@ const configList = ref<ConfigForm[]>([]);
 const selectedConfig = ref('');
 const selectedConfigData = ref<ConfigForm | null>(null);
 
+const botInfo = ref<BotInfo | null>(null);
+const chatIds = ref<ChatInfo[]>([]);
+const isFetchingChatIds = ref(false);
+const chatIdsError = ref('');
+
 const rules = reactive<FormRules>({
   name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
   token: [{ required: true, message: '请输入 Bot Token', trigger: 'blur' }],
   target: [{ required: true, message: '请输入 Chat ID', trigger: 'blur' }],
 });
+
+const fetchBotInfo = async () => {
+  try {
+    const response = await request.get('/config/bot-info');
+    if (response.data.code === 1) {
+      botInfo.value = response.data.data;
+    }
+  } catch (error) {
+    // Bot 未初始化时静默处理
+    botInfo.value = null;
+  }
+};
+
+const fetchChatIds = async () => {
+  isFetchingChatIds.value = true;
+  chatIdsError.value = '';
+  try {
+    const response = await request.get('/config/chat-ids');
+    if (response.data.code === 1) {
+      const data = response.data.data;
+      if (Array.isArray(data) && data.length > 0) {
+        chatIds.value = data;
+      } else {
+        chatIds.value = [];
+        chatIdsError.value = '未发现群组。请确保已将 Bot 添加到群组并发送过消息，然后重试。';
+      }
+    } else {
+      chatIdsError.value = response.data.msg || '获取群组 ID 失败';
+    }
+  } catch (error: any) {
+    chatIdsError.value = error.response?.data?.msg || '获取群组 ID 失败，请检查网络';
+  } finally {
+    isFetchingChatIds.value = false;
+  }
+};
+
+const selectChatId = (chatId: number) => {
+  ruleForm.target = String(chatId);
+  ElMessage.success('已填入 Chat ID: ' + chatId);
+};
 
 const fetchConfigList = async () => {
   isLoadingConfigs.value = true;
@@ -177,6 +288,8 @@ const handleSubmit = async () => {
           ElMessage.success(response.data.msg || '配置提交成功');
           ruleFormRef.value?.resetFields();
           fetchConfigList();
+          // 刷新 Bot 信息
+          fetchBotInfo();
         } else {
           ElMessage.error(response.data.msg || '提交失败');
         }
@@ -203,6 +316,8 @@ const loadConfig = async () => {
     const response = await request.get(`/config/${selectedConfig.value}`);
     if (response.data.code === 1) {
       ElMessage.success(response.data.msg || '配置加载成功');
+      // 刷新 Bot 信息
+      fetchBotInfo();
     } else {
       ElMessage.error(response.data.msg || '加载配置失败');
     }
@@ -254,6 +369,7 @@ const deleteConfig = async () => {
 
 onMounted(() => {
   fetchConfigList();
+  fetchBotInfo();
 });
 </script>
 
@@ -316,6 +432,64 @@ onMounted(() => {
 .config-preview h3 {
   margin-bottom: 10px;
   font-size: 16px;
+}
+
+.chat-id-section {
+  padding: 8px 0;
+}
+
+.help-text {
+  color: #909399;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.chat-ids-list {
+  margin-top: 12px;
+}
+
+.chat-ids-list h4 {
+  margin-bottom: 12px;
+  color: #303133;
+}
+
+.chat-id-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-id-item:hover {
+  background-color: #f5f7fa;
+  border-color: #409eff;
+}
+
+.chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-title {
+  font-weight: 500;
+  color: #303133;
+}
+
+.chat-type {
+  font-size: 12px;
+  color: #909399;
+}
+
+.chat-id {
+  font-family: monospace;
+  font-size: 14px;
+  color: #409eff;
 }
 
 /* 响应式设计 */

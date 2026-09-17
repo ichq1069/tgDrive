@@ -32,13 +32,14 @@
               <el-button type="default" @click="clearSearch" :icon="Refresh">全部</el-button>
             </div>
             <el-button v-if="currentRole === 'admin'" type="primary" @click="openUpdateDialog" :icon="Refresh" class="update-url-btn">更新 URL 前缀</el-button>
+            <ViewToggle v-if="!isMobile" v-model="viewMode" style="margin-left: 10px;" />
           </div>
         </div>
       </template>
 
       <!-- Desktop Table View -->
       <el-table
-        v-if="!isMobile"
+        v-if="!isMobile && viewMode === 'table'"
         :data="fileList"
         v-loading="loading"
         @selection-change="handleSelectionChange"
@@ -83,6 +84,25 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- Desktop Grid View -->
+      <FileGrid
+        v-if="!isMobile && viewMode === 'grid'"
+        :files="fileList"
+        :selectable="true"
+        :selected-ids="selectedFiles.map(f => f.fileId)"
+        v-loading="loading"
+        @click="previewFileAction"
+        @select="toggleSelect"
+      >
+        <template #actions="{ file }">
+          <el-button type="info" size="small" @click.stop="previewFileAction(file)" circle :icon="View" />
+          <el-button type="primary" size="small" @click.stop="copyMarkdown(file)" circle :icon="Memo" />
+          <el-button type="success" size="small" @click.stop="copyLink(file)" circle :icon="Link" />
+          <el-button type="warning" size="small" @click.stop="openLink(file.downloadUrl)" circle :icon="Download" />
+          <el-button type="danger" size="small" @click.stop="deleteFile(file)" circle :icon="Delete" />
+        </template>
+      </FileGrid>
 
       <!-- Mobile List View -->
       <div v-if="isMobile" class="mobile-file-list" ref="mobileListRef">
@@ -198,6 +218,8 @@ import request from '../utils/request';
 import { ElMessage, ElCheckbox, ElMessageBox } from 'element-plus';
 import { FolderOpened, Refresh, Document, Link, Download, Memo, Delete, View, Search } from '@element-plus/icons-vue';
 import FilePreview from '../components/FilePreview.vue';
+import ViewToggle from '../components/ViewToggle.vue';
+import FileGrid from '../components/FileGrid.vue';
 
 interface FileItem {
   fileName: string;
@@ -217,6 +239,7 @@ const pageSize = ref(10);
 const totalItems = ref(0);
 const isDialogVisible = ref(false);
 const selectedFiles = ref<FileItem[]>([]);
+const viewMode = ref<'grid' | 'table'>('table');
 const isMobile = ref(false);
 const mobileListRef = ref<HTMLElement | null>(null);
 const showPreview = ref(false);

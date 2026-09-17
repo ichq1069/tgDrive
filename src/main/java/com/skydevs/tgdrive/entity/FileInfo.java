@@ -37,5 +37,7 @@ public class FileInfo {
     private Long poolFolderId;
 
     private java.util.List<String> tags;
+
+    private String fileHash;
 }
 

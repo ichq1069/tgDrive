@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class ImportServiceImpl implements ImportService {
         int total = urls.size();
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger failed = new AtomicInteger(0);
+        AtomicInteger skipped = new AtomicInteger(0);
         List<String> failedUrls = new CopyOnWriteArrayList<>();
 
         // 并发控制：根据URL数量动态调整并发度
@@ -86,11 +88,23 @@ public class ImportServiceImpl implements ImportService {
                         throw new RuntimeException("下载文件为空");
                     }
 
+                    // 计算文件哈希值用于去重检测
+                    String fileHash = calculateFileHash(fileBytes);
+                    
+                    // 检查是否已存在相同哈希的文件
+                    FileInfo existingFile = fileMapper.getFileByHash(fileHash);
+                    if (existingFile != null) {
+                        int skipCount = skipped.incrementAndGet();
+                        log.info("URL导入跳过重复文件: {} -> 已有文件 {}", url, existingFile.getFileId());
+                        webSocketHandler.sendImportProgress(filename, index + 1, total, completed.get(), failed.get(), "skipped");
+                        return;
+                    }
+
                     webSocketHandler.sendImportProgress(filename, index + 1, total, completed.get(), failed.get(), "uploading");
 
                     // 上传到 Telegram
                     InputStream inputStream = new ByteArrayInputStream(fileBytes);
-                    String fileId = fileStorageService.uploadFile(inputStream, filename, fileBytes.length);
+                    String fileId = fileStorageService.uploadFile(inputStream, filename, (long) fileBytes.length);
 
                     // 构建下载链接
                     String downloadUrl = "/d/" + fileId;
@@ -100,11 +114,12 @@ public class ImportServiceImpl implements ImportService {
                             .fileId(fileId)
                             .fileName(filename)
                             .size(UserFriendly.humanReadableFileSize(fileBytes.length))
-                            .fullSize(fileBytes.length)
+                            .fullSize((long) fileBytes.length)
                             .uploadTime(LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC))
                             .downloadUrl(downloadUrl)
                             .userId(userId)
                             .library("tele")
+                            .fileHash(fileHash)
                             .build();
                     fileMapper.insertFile(fileInfo);
 
@@ -129,8 +144,23 @@ public class ImportServiceImpl implements ImportService {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .whenComplete((v, ex) -> {
                     webSocketHandler.sendImportComplete(total, completed.get(), failed.get(), failedUrls);
-                    log.info("URL导入任务完成: 总计={}, 成功={}, 失败={}", total, completed.get(), failed.get());
+                    log.info("URL导入任务完成: 总计={}, 成功={}, 失败={}, 跳过重复={}", total, completed.get(), failed.get(), skipped.get());
                 });
+    }
+
+    /**
+     * 计算文件SHA-256哈希值
+     */
+    private String calculateFileHash(byte[] fileBytes) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hashBytes = digest.digest(fileBytes);
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hashBytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     private byte[] downloadFile(String fileUrl) throws Exception {
