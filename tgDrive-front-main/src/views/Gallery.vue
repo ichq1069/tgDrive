@@ -53,11 +53,11 @@ const searchQuery = ref('')
 const fetchRandom = async () => {
   loading.value = true
   try {
-    let url = '/libraries/gallery/random?count=20'
+    let url = '/gallery?page=1&size=20'
     if (searchQuery.value) url += `&keyword=${encodeURIComponent(searchQuery.value)}`
     const res = await request.get(url)
     if (res.data?.code === 1) {
-      galleryList.value = res.data.data || []
+      galleryList.value = res.data.data?.records || []
     }
   } catch (e) {
     ElMessage.error('获取随机画廊失败')

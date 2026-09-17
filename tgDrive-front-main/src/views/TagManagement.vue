@@ -62,7 +62,7 @@ const createForm = ref({ name: '', description: '' })
 const fetchTags = async () => {
   loading.value = true
   try {
-    const res = await request.get('/tags')
+    const res = await request.get('/admin/tags')
     if (res.data?.code === 1) {
       tagList.value = res.data.data || []
     }
@@ -80,7 +80,7 @@ const createTag = async () => {
   }
   submitLoading.value = true
   try {
-    const res = await request.post('/tags', createForm.value)
+    const res = await request.post('/admin/tags', createForm.value)
     if (res.data?.code === 1) {
       ElMessage.success('创建成功')
       showCreateDialog.value = false
@@ -99,7 +99,7 @@ const createTag = async () => {
 const deleteTag = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定删除该标签？关联标签的文件不会被删除。', '确认删除', { type: 'warning' })
-    const res = await request.delete(`/tags/${id}`)
+    const res = await request.delete(`/admin/tags/${id}`)
     if (res.data?.code === 1) {
       ElMessage.success('删除成功')
       fetchTags()
