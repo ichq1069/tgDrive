@@ -274,7 +274,16 @@ const fetchConfigList = async () => {
 };
 
 const handleConfigSelect = (configName: string) => {
-  selectedConfigData.value = configList.value.find(config => config.name === configName) || null;
+  const found = configList.value.find(config => config.name === configName) || null;
+  selectedConfigData.value = found;
+  if (found) {
+    ruleForm.name = found.name;
+    ruleForm.token = found.token;
+    ruleForm.target = found.target;
+    ruleForm.url = found.url || '';
+    ruleForm.pass = found.pass || '';
+    ElMessage.success(`已加载配置: ${found.name}`);
+  }
 };
 
 const handleSubmit = async () => {
