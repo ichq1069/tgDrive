@@ -1,6 +1,12 @@
 package com.skydevs.tgdrive.service.impl;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.WaitUntilState;
 import com.skydevs.tgdrive.service.WebPageParserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,21 +56,21 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
 
             // 注入Cookie
             if (cookie != null && !cookie.isEmpty()) {
-                List<Cookie> cookies = parseCookieString(cookie, pageUrl);
+                List<com.microsoft.playwright.Cookie> cookies = parseCookieString(cookie, pageUrl);
                 if (!cookies.isEmpty()) {
                     context.addCookies(cookies);
                 }
             }
 
             Page page = context.newPage();
-            page.navigate(pageUrl, new Page.NavigateOptions().setWaitUntil(com.microsoft.playwright.options.WaitUntilState.DOMCONTENTLOADED));
+            page.navigate(pageUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
 
             // 等待页面加载
             page.waitForTimeout(3000);
 
             // 尝试等待图片加载
             try {
-                page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE, 
+                page.waitForLoadState(LoadState.NETWORKIDLE, 
                     new Page.WaitForLoadStateOptions().setTimeout(10000));
             } catch (Exception ignored) {}
 
@@ -98,8 +104,8 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
         }
     }
 
-    private List<Cookie> parseCookieString(String cookieStr, String pageUrl) {
-        List<Cookie> cookies = new ArrayList<>();
+    private List<com.microsoft.playwright.Cookie> parseCookieString(String cookieStr, String pageUrl) {
+        List<com.microsoft.playwright.Cookie> cookies = new ArrayList<>();
         try {
             String domain = new java.net.URL(pageUrl).getHost();
             String[] pairs = cookieStr.split(";");
@@ -107,7 +113,7 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
                 String trimmed = pair.trim();
                 if (!trimmed.isEmpty() && trimmed.contains("=")) {
                     String[] kv = trimmed.split("=", 2);
-                    cookies.add(new Cookie(kv[0].trim(), kv[1].trim())
+                    cookies.add(new com.microsoft.playwright.Cookie(kv[0].trim(), kv[1].trim())
                         .setDomain(domain)
                         .setPath("/"));
                 }
