@@ -39,5 +39,9 @@ public class FileInfo {
     private java.util.List<String> tags;
 
     private String fileHash;
+
+    private String originalUrl;
+
+    private String sourcePage;
 }
 

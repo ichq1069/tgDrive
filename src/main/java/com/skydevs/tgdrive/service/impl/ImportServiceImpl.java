@@ -51,7 +51,7 @@ public class ImportServiceImpl implements ImportService {
     private static final int READ_TIMEOUT = 60000;
 
     @Override
-    public void importFromUrls(List<String> urls, Long userId) {
+    public void importFromUrls(List<String> urls, Long userId, String sourcePage) {
         int total = urls.size();
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger failed = new AtomicInteger(0);
@@ -109,7 +109,7 @@ public class ImportServiceImpl implements ImportService {
                     // 构建下载链接
                     String downloadUrl = "/d/" + fileId;
 
-                    // 入库
+                    // 入库（包含原始URL和来源页面）
                     FileInfo fileInfo = FileInfo.builder()
                             .fileId(fileId)
                             .fileName(filename)
@@ -120,6 +120,8 @@ public class ImportServiceImpl implements ImportService {
                             .userId(userId)
                             .library("tele")
                             .fileHash(fileHash)
+                            .originalUrl(url)
+                            .sourcePage(sourcePage)
                             .build();
                     fileMapper.insertFile(fileInfo);
 

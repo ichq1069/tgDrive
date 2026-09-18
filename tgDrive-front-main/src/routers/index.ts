@@ -29,6 +29,7 @@ const PrivateWhitelist = () => import('../views/PrivateWhitelist.vue')
 const RedeemCodes = () => import('../views/RedeemCodes.vue')
 const RedeemPage = () => import('../views/RedeemPage.vue')
 const UrlImport = () => import('../views/UrlImport.vue')
+const WebScrape = () => import('../views/WebScrape.vue')
 
 
 interface RouteMeta extends Record<string | number | symbol, unknown> {
@@ -142,6 +143,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'url-import',
         component: UrlImport,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'web-scrape',
+        component: WebScrape,
         meta: {
           requiresAuth: true,
           requiredRole: 'user'
@@ -272,6 +281,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'url-import',
         component: UrlImport,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'web-scrape',
+        component: WebScrape,
         meta: {
           requiresAuth: true,
           requiredRole: 'admin'

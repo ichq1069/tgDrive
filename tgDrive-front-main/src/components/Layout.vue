@@ -46,6 +46,7 @@
                 <el-dropdown-item v-if="isPrivateAuthorized" command="private" :icon="Lock">私密库</el-dropdown-item>
                 <el-dropdown-item command="gallery" :icon="Picture">画廊</el-dropdown-item>
                 <el-dropdown-item command="url-import" :icon="Link">URL 导入</el-dropdown-item>
+                <el-dropdown-item command="web-scrape" :icon="Picture">网页解析</el-dropdown-item>
                 <el-dropdown-item command="upload" :icon="Upload">上传文件</el-dropdown-item>
                 <el-dropdown-item command="password" :icon="Lock">修改密码</el-dropdown-item>
               </el-dropdown-menu>
@@ -337,6 +338,9 @@ const handleNavCommand = (command: string) => {
       break
     case 'url-import':
       router.push('/user/url-import')
+      break
+    case 'web-scrape':
+      router.push('/user/web-scrape')
       break
   }
 }

@@ -86,6 +86,10 @@
             <el-icon><Link /></el-icon>
             <template #title>URL 导入</template>
           </el-menu-item>
+          <el-menu-item index="/web-scrape">
+            <el-icon><Picture /></el-icon>
+            <template #title>网页解析</template>
+          </el-menu-item>
           <el-menu-item index="/private-whitelist">
             <el-icon><User /></el-icon>
             <template #title>私密库白名单</template>
@@ -126,7 +130,6 @@
             <el-icon><Setting /></el-icon>
             <template #title>隐私政策</template>
           </el-menu-item>
-
         </el-menu>
       </el-aside>
 
@@ -176,6 +179,10 @@
           <el-menu-item index="/url-import">
             <el-icon><Link /></el-icon>
             <template #title>URL 导入</template>
+          </el-menu-item>
+          <el-menu-item index="/web-scrape">
+            <el-icon><Picture /></el-icon>
+            <template #title>网页解析</template>
           </el-menu-item>
           <el-menu-item index="/private-whitelist">
             <el-icon><User /></el-icon>
