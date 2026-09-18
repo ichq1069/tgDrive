@@ -30,6 +30,8 @@ const RedeemCodes = () => import('../views/RedeemCodes.vue')
 const RedeemPage = () => import('../views/RedeemPage.vue')
 const UrlImport = () => import('../views/UrlImport.vue')
 const WebScrape = () => import('../views/WebScrape.vue')
+const ContentLevelManagement = () => import('../views/ContentLevelManagement.vue')
+const TagRuleManagement = () => import('../views/TagRuleManagement.vue')
 
 
 interface RouteMeta extends Record<string | number | symbol, unknown> {
@@ -289,6 +291,22 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'web-scrape',
         component: WebScrape,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'content-levels',
+        component: ContentLevelManagement,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'tag-rules',
+        component: TagRuleManagement,
         meta: {
           requiresAuth: true,
           requiredRole: 'admin'

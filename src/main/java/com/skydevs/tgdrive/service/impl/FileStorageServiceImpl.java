@@ -15,12 +15,16 @@ import com.pengrad.telegrambot.response.SendResponse;
 import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.entity.BigFileInfo;
 import com.skydevs.tgdrive.entity.FileInfo;
+import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.exception.user.InsufficientPermissionException;
 import com.skydevs.tgdrive.exception.file.UploadFileIsNullException;
 import com.skydevs.tgdrive.mapper.FileMapper;
 import com.skydevs.tgdrive.mapper.TagMapper;
+import com.skydevs.tgdrive.mapper.UserMapper;
 import com.skydevs.tgdrive.result.PageResult;
 import com.skydevs.tgdrive.service.FileStorageService;
+import com.skydevs.tgdrive.service.TagRuleService;
+import com.skydevs.tgdrive.service.TagService;
 import com.skydevs.tgdrive.service.TelegramBotService;
 import com.skydevs.tgdrive.utils.StringUtil;
 import com.skydevs.tgdrive.utils.UserFriendly;
@@ -63,10 +67,19 @@ public class FileStorageServiceImpl implements FileStorageService {
     private TagMapper tagMapper;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private TelegramBotService telegramBotService;
 
     @Autowired
     private UploadProgressWebSocketHandler uploadProgressWebSocketHandler;
+
+    @Autowired
+    private TagRuleService tagRuleService;
+
+    @Autowired
+    private TagService tagService;
 
     @Autowired
     @Qualifier("uploadTaskExecutor")
@@ -112,6 +125,12 @@ public class FileStorageServiceImpl implements FileStorageService {
                 downloadUrl = prefix + "/d/" + fileID;
 
                 // 保存文件信息到数据库
+                String contentLevel = null;
+                User user = userMapper.getUserById(userId);
+                if (user != null && user.getMemberLevel() != null) {
+                    contentLevel = user.getMemberLevel();
+                }
+
                 FileInfo fileInfo = FileInfo.builder()
                         .fileId(fileID)
                         .size(UserFriendly.humanReadableFileSize(size))
@@ -122,8 +141,16 @@ public class FileStorageServiceImpl implements FileStorageService {
                         .userId(userId)
                         .library("tele")
                         .fileHash(fileHash)
+                        .contentLevel(contentLevel)
                         .build();
                 fileMapper.insertFile(fileInfo);
+
+                // Auto-apply tags based on rules
+                List<Long> matchedTagIds = tagRuleService.matchTagsForFile(filename);
+                if (!matchedTagIds.isEmpty()) {
+                    tagService.addFileTags(fileID, matchedTagIds);
+                    log.info("自动打标签: {} -> tags={}", filename, matchedTagIds);
+                }
             } catch (IOException e) {
                 log.error("文件上传失败，响应信息：{}", e.getMessage());
                 throw new RuntimeException("文件上传失败");

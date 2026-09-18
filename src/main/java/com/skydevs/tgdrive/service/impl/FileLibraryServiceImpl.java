@@ -3,10 +3,12 @@ package com.skydevs.tgdrive.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.skydevs.tgdrive.constants.Libraries;
+import com.skydevs.tgdrive.entity.ContentLevel;
 import com.skydevs.tgdrive.entity.FileInfo;
 import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.exception.BadRequestException;
 import com.skydevs.tgdrive.exception.ForbiddenException;
+import com.skydevs.tgdrive.mapper.ContentLevelMapper;
 import com.skydevs.tgdrive.mapper.FileMapper;
 import com.skydevs.tgdrive.mapper.TagMapper;
 import com.skydevs.tgdrive.result.PageResult;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -27,6 +30,7 @@ public class FileLibraryServiceImpl implements FileLibraryService {
     private final FileMapper fileMapper;
     private final LibraryAccessService libraryAccessService;
     private final TagMapper tagMapper;
+    private final ContentLevelMapper contentLevelMapper;
 
     @Override
     public PageResult list(String library, String keyword, List<Long> tagIds, int page, int size) {
@@ -35,7 +39,7 @@ public class FileLibraryServiceImpl implements FileLibraryService {
             throw new ForbiddenException("无权访问该库");
         }
         PageHelper.startPage(page, size);
-        List<FileInfo> files = fileMapper.getLibraryFiles(library, keyword, user.getId(), user.getRole(), tagIds);
+        List<FileInfo> files = fileMapper.getLibraryFiles(library, keyword, user.getId(), user.getRole(), tagIds, user.getMemberLevel());
         PageInfo<FileInfo> pageInfo = new PageInfo<>(files);
         return new PageResult((int) pageInfo.getTotal(), pageInfo.getList());
     }
@@ -50,6 +54,19 @@ public class FileLibraryServiceImpl implements FileLibraryService {
         if (!Libraries.SHARED.equals(targetLibrary) && !Libraries.PRIVATE.equals(targetLibrary)) {
             throw new BadRequestException("转入目标必须是 shared 或 private");
         }
+        // Validate content_level against dynamic content_levels table
+        if (Libraries.PRIVATE.equals(targetLibrary)) {
+            if (contentLevel == null || contentLevel.isEmpty()) {
+                throw new BadRequestException("转入私密库必须指定 content_level");
+            }
+            ContentLevel level = contentLevelMapper.getByName(contentLevel);
+            if (level == null) {
+                List<String> validLevels = contentLevelMapper.listAll().stream()
+                        .map(ContentLevel::getName)
+                        .collect(Collectors.toList());
+                throw new BadRequestException("content_level 无效，可选值: " + String.join("/", validLevels));
+            }
+        }
         for (String fileId : fileIds) {
             FileInfo file = fileMapper.getFileByFileId(fileId);
             if (file == null) {
@@ -61,14 +78,6 @@ public class FileLibraryServiceImpl implements FileLibraryService {
             String newContentLevel = contentLevel;
             boolean inRandomPool = false;
             Long poolFolderId = null;
-            if (Libraries.PRIVATE.equals(targetLibrary)) {
-                if (contentLevel == null || contentLevel.isEmpty()) {
-                    throw new BadRequestException("转入私密库必须指定 content_level");
-                }
-                if (!"pt".equals(contentLevel) && !"vip".equals(contentLevel) && !"svip".equals(contentLevel) && !"vvip".equals(contentLevel)) {
-                    throw new BadRequestException("content_level 必须是 pt/vip/svip/vvvip");
-                }
-            }
             boolean newIsPublic = Libraries.SHARED.equals(targetLibrary) || file.isPublic();
             fileMapper.updateLibrary(fileId, targetLibrary, newIsPublic, newContentLevel, inRandomPool, poolFolderId);
             log.info("文件 {} 从 {} 转入 {} by admin {}", fileId, file.getLibrary(), targetLibrary, user.getId());

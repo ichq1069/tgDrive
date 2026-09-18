@@ -95,10 +95,7 @@
       <el-form label-width="100px">
         <el-form-item label="内容等级">
           <el-select v-model="contentLevel" placeholder="请选择内容等级" style="width: 100%">
-            <el-option label="PT" value="pt" />
-            <el-option label="VIP" value="vip" />
-            <el-option label="SVIP" value="svip" />
-            <el-option label="VVIP" value="vvip" />
+            <el-option v-for="level in contentLevels" :key="level.id" :label="level.name" :value="level.name" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -131,6 +128,7 @@ const searchQuery = ref('')
 const selectedFiles = ref<any[]>([])
 const contentLevelDialogVisible = ref(false)
 const contentLevel = ref('pt')
+const contentLevels = ref<any[]>([])
 const transferLoading = ref(false)
 const pendingTransferFileIds = ref<string[]>([])
 const viewMode = ref<'grid' | 'table'>('table')
@@ -239,7 +237,18 @@ const batchTransfer = async (target: string) => {
   }
 }
 
-onMounted(() => fetchFiles())
+onMounted(async () => {
+  fetchFiles()
+  // Fetch content levels for the transfer dialog
+  try {
+    const res = await request.get('/content-levels')
+    if (res.data?.code === 1) {
+      contentLevels.value = res.data.data || []
+    }
+  } catch (e) {
+    // ignore
+  }
+})
 </script>
 
 <style scoped>

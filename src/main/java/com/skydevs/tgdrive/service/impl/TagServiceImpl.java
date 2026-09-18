@@ -31,7 +31,12 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public Tag create(String name) {
+    public List<Tag> listDefault() {
+        return tagMapper.listDefault();
+    }
+
+    @Override
+    public Tag create(String name, Integer priority, Integer isDefault) {
         if (name == null || name.trim().isEmpty()) {
             throw new BadRequestException("标签名不能为空");
         }
@@ -39,27 +44,36 @@ public class TagServiceImpl implements TagService {
         if (tagMapper.getByName(trimmed) != null) {
             throw new BadRequestException("标签已存在");
         }
-        Tag tag = Tag.builder().name(trimmed).build();
+        Tag tag = Tag.builder()
+                .name(trimmed)
+                .priority(priority != null ? priority : 0)
+                .isDefault(isDefault != null ? isDefault : 0)
+                .build();
         tagMapper.insert(tag);
         log.info("创建标签: {}", trimmed);
         return tag;
     }
 
     @Override
-    public void rename(Long id, String name) {
+    public void updateTag(Long id, String name, Integer priority, Integer isDefault) {
         Tag tag = tagMapper.getById(id);
         if (tag == null) {
             throw new BadRequestException("标签不存在");
         }
-        if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("标签名不能为空");
+        if (name != null && !name.trim().isEmpty()) {
+            String trimmed = name.trim();
+            Tag existing = tagMapper.getByName(trimmed);
+            if (existing != null && !existing.getId().equals(id)) {
+                throw new BadRequestException("标签名已存在");
+            }
+            tag.setName(trimmed);
         }
-        String trimmed = name.trim();
-        Tag existing = tagMapper.getByName(trimmed);
-        if (existing != null && !existing.getId().equals(id)) {
-            throw new BadRequestException("标签名已存在");
+        if (priority != null) {
+            tag.setPriority(priority);
         }
-        tag.setName(trimmed);
+        if (isDefault != null) {
+            tag.setIsDefault(isDefault);
+        }
         tagMapper.update(tag);
     }
 
@@ -89,6 +103,15 @@ public class TagServiceImpl implements TagService {
             throw new ForbiddenException("无权设置此文件标签");
         }
         tagMapper.deleteAssociationsByFileId(fileId);
+        if (tagIds != null) {
+            for (Long tagId : tagIds) {
+                tagMapper.insertFileTag(fileId, tagId);
+            }
+        }
+    }
+
+    @Override
+    public void addFileTags(String fileId, List<Long> tagIds) {
         if (tagIds != null) {
             for (Long tagId : tagIds) {
                 tagMapper.insertFileTag(fileId, tagId);

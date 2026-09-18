@@ -78,6 +78,14 @@
             <el-icon><PriceTag /></el-icon>
             <template #title>标签管理</template>
           </el-menu-item>
+          <el-menu-item index="/content-levels">
+            <el-icon><Lock /></el-icon>
+            <template #title>权限级别</template>
+          </el-menu-item>
+          <el-menu-item index="/tag-rules">
+            <el-icon><PriceTag /></el-icon>
+            <template #title>标签规则</template>
+          </el-menu-item>
           <el-menu-item index="/gallery">
             <el-icon><Picture /></el-icon>
             <template #title>画廊</template>
@@ -171,6 +179,14 @@
           <el-menu-item index="/tags">
             <el-icon><PriceTag /></el-icon>
             <template #title>标签管理</template>
+          </el-menu-item>
+          <el-menu-item index="/content-levels">
+            <el-icon><Lock /></el-icon>
+            <template #title>权限级别</template>
+          </el-menu-item>
+          <el-menu-item index="/tag-rules">
+            <el-icon><PriceTag /></el-icon>
+            <template #title>标签规则</template>
           </el-menu-item>
           <el-menu-item index="/gallery">
             <el-icon><Picture /></el-icon>

@@ -8,13 +8,17 @@ public interface TagService {
 
     List<Tag> listAll();
 
-    Tag create(String name);
+    List<Tag> listDefault();
 
-    void rename(Long id, String name);
+    Tag create(String name, Integer priority, Integer isDefault);
+
+    void updateTag(Long id, String name, Integer priority, Integer isDefault);
 
     void delete(Long id);
 
     void setFileTags(String fileId, List<Long> tagIds);
+
+    void addFileTags(String fileId, List<Long> tagIds);
 
     List<Tag> listByFileId(String fileId);
 }

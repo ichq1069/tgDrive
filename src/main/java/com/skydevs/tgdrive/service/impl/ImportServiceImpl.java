@@ -2,9 +2,13 @@ package com.skydevs.tgdrive.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.skydevs.tgdrive.entity.FileInfo;
+import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.mapper.FileMapper;
+import com.skydevs.tgdrive.mapper.UserMapper;
 import com.skydevs.tgdrive.service.FileStorageService;
 import com.skydevs.tgdrive.service.ImportService;
+import com.skydevs.tgdrive.service.TagRuleService;
+import com.skydevs.tgdrive.service.TagService;
 import com.skydevs.tgdrive.utils.UserFriendly;
 import com.skydevs.tgdrive.websocket.UploadProgressWebSocketHandler;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +45,16 @@ public class ImportServiceImpl implements ImportService {
     private FileMapper fileMapper;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private UploadProgressWebSocketHandler webSocketHandler;
+
+    @Autowired
+    private TagRuleService tagRuleService;
+
+    @Autowired
+    private TagService tagService;
 
     @Autowired
     @Qualifier("uploadTaskExecutor")
@@ -109,6 +122,13 @@ public class ImportServiceImpl implements ImportService {
                     // 构建下载链接
                     String downloadUrl = "/d/" + fileId;
 
+                    // 获取用户会员等级
+                    String contentLevel = null;
+                    User user = userMapper.getUserById(userId);
+                    if (user != null && user.getMemberLevel() != null) {
+                        contentLevel = user.getMemberLevel();
+                    }
+
                     // 入库（包含原始URL和来源页面）
                     FileInfo fileInfo = FileInfo.builder()
                             .fileId(fileId)
@@ -122,8 +142,16 @@ public class ImportServiceImpl implements ImportService {
                             .fileHash(fileHash)
                             .originalUrl(url)
                             .sourcePage(sourcePage)
+                            .contentLevel(contentLevel)
                             .build();
                     fileMapper.insertFile(fileInfo);
+
+                    // Auto-apply tags based on rules
+                    List<Long> matchedTagIds = tagRuleService.matchTagsForFile(filename);
+                    if (!matchedTagIds.isEmpty()) {
+                        tagService.addFileTags(fileId, matchedTagIds);
+                        log.info("URL导入自动打标签: {} -> tags={}", filename, matchedTagIds);
+                    }
 
                     int done = completed.incrementAndGet();
                     webSocketHandler.sendImportProgress(filename, index + 1, total, done, failed.get(), "completed");

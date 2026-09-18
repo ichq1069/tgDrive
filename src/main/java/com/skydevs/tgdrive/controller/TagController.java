@@ -25,17 +25,23 @@ public class TagController {
         return Result.success(tagService.listAll());
     }
 
+    @SaCheckLogin
+    @GetMapping("/tags/default")
+    public Result<List<Tag>> listDefaultTags() {
+        return Result.success(tagService.listDefault());
+    }
+
     @SaCheckRole("admin")
     @PostMapping("/admin/tags")
     public Result<Tag> createTag(@RequestBody TagNameRequest request) {
-        return Result.success(tagService.create(request.getName()));
+        return Result.success(tagService.create(request.getName(), request.getPriority(), request.getIsDefault()));
     }
 
     @SaCheckRole("admin")
     @PatchMapping("/admin/tags/{id}")
     public Result<String> renameTag(@PathVariable Long id, @RequestBody TagNameRequest request) {
-        tagService.rename(id, request.getName());
-        return Result.success("重命名成功");
+        tagService.updateTag(id, request.getName(), request.getPriority(), request.getIsDefault());
+        return Result.success("更新成功");
     }
 
     @SaCheckRole("admin")

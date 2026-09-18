@@ -9,9 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Tag {
+public class TagRule {
     private Long id;
     private String name;
-    private Integer priority;
-    private Integer isDefault;
+    private String ruleType;
+    private String ruleValue;
+    private Long tagId;
+    private Integer enabled;
 }

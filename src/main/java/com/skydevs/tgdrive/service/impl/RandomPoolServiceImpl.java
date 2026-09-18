@@ -116,9 +116,9 @@ public class RandomPoolServiceImpl implements RandomPoolService {
 
     @Override
     public PageResult gallery(String keyword, Long folderId, String fileType, List<Long> tagIds, int page, int size) {
-        libraryAccessService.requireCurrentUser();
+        User user = libraryAccessService.requireCurrentUser();
         PageHelper.startPage(page, size);
-        List<FileInfo> files = fileMapper.getGalleryFiles(keyword, folderId, fileType, tagIds);
+        List<FileInfo> files = fileMapper.getGalleryFiles(keyword, folderId, fileType, tagIds, user.getMemberLevel());
         PageInfo<FileInfo> pageInfo = new PageInfo<>(files);
         return new PageResult((int) pageInfo.getTotal(), pageInfo.getList());
     }

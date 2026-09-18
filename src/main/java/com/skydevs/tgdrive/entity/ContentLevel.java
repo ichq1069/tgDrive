@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Tag {
+public class ContentLevel {
     private Long id;
     private String name;
-    private Integer priority;
-    private Integer isDefault;
+    private Integer levelOrder;
+    private String description;
 }

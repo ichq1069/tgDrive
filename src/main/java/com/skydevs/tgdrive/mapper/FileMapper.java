@@ -59,13 +59,18 @@ public interface FileMapper {
                                            @Param("keyword") String keyword,
                                            @Param("userId") Long userId,
                                            @Param("role") String role,
-                                           @Param("tagIds") List<Long> tagIds) {
+                                           @Param("tagIds") List<Long> tagIds,
+                                           @Param("memberLevel") String memberLevel) {
             StringBuilder sql = new StringBuilder("SELECT f.*, u.username as uploader FROM files f LEFT JOIN users u ON f.user_id = u.id WHERE f.library = #{library}");
             if (keyword != null && !keyword.isEmpty()) {
                 sql.append(" AND f.file_name LIKE '%' || #{keyword} || '%'");
             }
             if ("tele".equals(library) && !"admin".equals(role) && userId != null) {
                 sql.append(" AND f.user_id = #{userId}");
+            }
+            // content_level filtering for private library
+            if ("private".equals(library) && !"admin".equals(role)) {
+                appendContentLevelFilter(sql, memberLevel);
             }
             appendTagFilter(sql, tagIds);
             sql.append(" ORDER BY f.upload_time DESC");
@@ -75,7 +80,8 @@ public interface FileMapper {
         public String getGalleryFilesQuery(@Param("keyword") String keyword,
                                            @Param("folderId") Long folderId,
                                            @Param("fileType") String fileType,
-                                           @Param("tagIds") List<Long> tagIds) {
+                                           @Param("tagIds") List<Long> tagIds,
+                                           @Param("memberLevel") String memberLevel) {
             StringBuilder sql = new StringBuilder("SELECT f.*, u.username as uploader FROM files f LEFT JOIN users u ON f.user_id = u.id WHERE f.library = 'shared' AND f.in_random_pool = 1");
             if (keyword != null && !keyword.isEmpty()) {
                 sql.append(" AND f.file_name LIKE '%' || #{keyword} || '%'");
@@ -97,6 +103,28 @@ public interface FileMapper {
             appendTagFilter(sql, tagIds);
             sql.append(" ORDER BY f.upload_time DESC");
             return sql.toString();
+        }
+
+        private void appendContentLevelFilter(StringBuilder sql, String memberLevel) {
+            if (memberLevel == null || memberLevel.isEmpty()) {
+                // No member level: only show files with 'pt' or null content_level
+                sql.append(" AND (f.content_level IS NULL OR f.content_level = 'pt')");
+                return;
+            }
+            // Show files where content_level is null, 'pt', or <= memberLevel
+            sql.append(" AND (f.content_level IS NULL OR f.content_level = 'pt'");
+            switch (memberLevel) {
+                case "vip":
+                    sql.append(" OR f.content_level = 'vip'");
+                    break;
+                case "svip":
+                    sql.append(" OR f.content_level = 'vip' OR f.content_level = 'svip'");
+                    break;
+                case "vvip":
+                    sql.append(" OR f.content_level = 'vip' OR f.content_level = 'svip' OR f.content_level = 'vvip'");
+                    break;
+            }
+            sql.append(")");
         }
 
         private void appendTagFilter(StringBuilder sql, List<Long> tagIds) {
@@ -192,13 +220,15 @@ public interface FileMapper {
                                    @Param("keyword") String keyword,
                                    @Param("userId") Long userId,
                                    @Param("role") String role,
-                                   @Param("tagIds") List<Long> tagIds);
+                                   @Param("tagIds") List<Long> tagIds,
+                                   @Param("memberLevel") String memberLevel);
 
     @SelectProvider(type = FileSqlProvider.class, method = "getGalleryFilesQuery")
     Page<FileInfo> getGalleryFiles(@Param("keyword") String keyword,
                                    @Param("folderId") Long folderId,
                                    @Param("fileType") String fileType,
-                                   @Param("tagIds") List<Long> tagIds);
+                                   @Param("tagIds") List<Long> tagIds,
+                                   @Param("memberLevel") String memberLevel);
 
     @SelectProvider(type = FileSqlProvider.class, method = "getRandomPoolQuery")
     List<FileInfo> getRandomPoolFiles(@Param("folderId") Long folderId, @Param("tagIds") List<Long> tagIds);

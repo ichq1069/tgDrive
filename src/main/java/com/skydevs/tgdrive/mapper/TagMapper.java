@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface TagMapper {
 
-    @Select("SELECT * FROM tags ORDER BY id ASC")
+    @Select("SELECT * FROM tags ORDER BY priority DESC, id ASC")
     List<Tag> listAll();
 
     @Select("SELECT * FROM tags WHERE id = #{id}")
@@ -17,11 +17,14 @@ public interface TagMapper {
     @Select("SELECT * FROM tags WHERE name = #{name}")
     Tag getByName(String name);
 
-    @Insert("INSERT INTO tags (name) VALUES (#{name})")
+    @Select("SELECT * FROM tags WHERE is_default = 1 ORDER BY priority DESC")
+    List<Tag> listDefault();
+
+    @Insert("INSERT INTO tags (name, priority, is_default) VALUES (#{name}, #{priority}, #{isDefault})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Tag tag);
 
-    @Update("UPDATE tags SET name = #{name} WHERE id = #{id}")
+    @Update("UPDATE tags SET name = #{name}, priority = #{priority}, is_default = #{isDefault} WHERE id = #{id}")
     void update(Tag tag);
 
     @Delete("DELETE FROM tags WHERE id = #{id}")
