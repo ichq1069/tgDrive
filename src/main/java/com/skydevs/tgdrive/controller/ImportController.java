@@ -6,22 +6,28 @@ import com.skydevs.tgdrive.dto.UrlImportRequest;
 import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.ImportService;
 import com.skydevs.tgdrive.service.WebPageParserService;
-import com.skydevs.tgdrive.service.impl.BrowserPageParserServiceImpl;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/import")
-@RequiredArgsConstructor
 public class ImportController {
 
     private final ImportService importService;
     private final WebPageParserService webPageParserService;
-    private final BrowserPageParserServiceImpl browserPageParserService;
+    private final WebPageParserService browserPageParserService;
+
+    public ImportController(
+            ImportService importService,
+            WebPageParserService webPageParserService,
+            @Qualifier("browserPageParser") WebPageParserService browserPageParserService) {
+        this.importService = importService;
+        this.webPageParserService = webPageParserService;
+        this.browserPageParserService = browserPageParserService;
+    }
 
     @SaCheckLogin
     @PostMapping("/url")

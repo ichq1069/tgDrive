@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Service
+@Service("browserPageParser")
 @Slf4j
 public class BrowserPageParserServiceImpl implements WebPageParserService {
 

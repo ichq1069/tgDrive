@@ -2,6 +2,7 @@ package com.skydevs.tgdrive.service.impl;
 
 import com.skydevs.tgdrive.service.WebPageParserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -16,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Primary
 @Slf4j
 public class WebPageParserServiceImpl implements WebPageParserService {
 
