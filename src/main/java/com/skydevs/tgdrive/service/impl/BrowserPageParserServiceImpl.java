@@ -54,11 +54,18 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
                     .setLocale("zh-CN")
             );
 
-            // 注入Cookie
+            // 注入Cookie（通过JS设置，避免API兼容性问题）
             if (cookie != null && !cookie.isEmpty()) {
-                List<com.microsoft.playwright.Cookie> cookies = parseCookieString(cookie, pageUrl);
-                if (!cookies.isEmpty()) {
-                    context.addCookies(cookies);
+                String[] pairs = cookie.split(";");
+                for (String pair : pairs) {
+                    String trimmed = pair.trim();
+                    if (!trimmed.isEmpty() && trimmed.contains("=")) {
+                        try {
+                            page.evaluate("document.cookie = arguments[0];", trimmed);
+                        } catch (Exception e) {
+                            log.debug("Cookie注入失败: {}", trimmed);
+                        }
+                    }
                 }
             }
 
@@ -102,26 +109,6 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
                 try { browser.close(); } catch (Exception ignored) {}
             }
         }
-    }
-
-    private List<com.microsoft.playwright.Cookie> parseCookieString(String cookieStr, String pageUrl) {
-        List<com.microsoft.playwright.Cookie> cookies = new ArrayList<>();
-        try {
-            String domain = new java.net.URL(pageUrl).getHost();
-            String[] pairs = cookieStr.split(";");
-            for (String pair : pairs) {
-                String trimmed = pair.trim();
-                if (!trimmed.isEmpty() && trimmed.contains("=")) {
-                    String[] kv = trimmed.split("=", 2);
-                    cookies.add(new com.microsoft.playwright.Cookie(kv[0].trim(), kv[1].trim())
-                        .setDomain(domain)
-                        .setPath("/"));
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Cookie解析失败: {}", e.getMessage());
-        }
-        return cookies;
     }
 
     private List<ImageInfo> extractImages(String html, String baseUrl) {
