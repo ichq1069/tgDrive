@@ -6,6 +6,7 @@ import com.skydevs.tgdrive.dto.UrlImportRequest;
 import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.ImportService;
 import com.skydevs.tgdrive.service.WebPageParserService;
+import com.skydevs.tgdrive.service.impl.BrowserPageParserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class ImportController {
 
     private final ImportService importService;
     private final WebPageParserService webPageParserService;
+    private final BrowserPageParserServiceImpl browserPageParserService;
 
     @SaCheckLogin
     @PostMapping("/url")
@@ -49,12 +51,19 @@ public class ImportController {
     public Result<WebPageParserService.ParseResult> parseWebPage(@RequestBody Map<String, String> request) {
         String url = request.get("url");
         String cookie = request.get("cookie");
+        String browserMode = request.get("browserMode");
         
         if (url == null || url.isEmpty()) {
             return Result.error("URL不能为空");
         }
         
-        WebPageParserService.ParseResult result = webPageParserService.parseWebPage(url, cookie);
+        WebPageParserService.ParseResult result;
+        if ("true".equals(browserMode)) {
+            result = browserPageParserService.parseWebPage(url, cookie);
+        } else {
+            result = webPageParserService.parseWebPage(url, cookie);
+        }
+        
         if (result.isSuccess()) {
             return Result.success(result);
         } else {

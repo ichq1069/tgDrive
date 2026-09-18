@@ -27,6 +27,16 @@
           />
         </el-form-item>
 
+        <el-form-item label="浏览器模式">
+          <el-switch
+            v-model="form.browserMode"
+            active-text="使用浏览器（可绕过反爬，较慢）"
+            inactive-text="快速模式"
+            :disabled="parsing"
+          />
+          <div class="form-tip">开启后使用真实浏览器引擎解析，可处理JS渲染和反爬保护，但速度较慢</div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" @click="handleParse" :loading="parsing" :disabled="!form.url">
             <el-icon><Search /></el-icon>
@@ -131,7 +141,8 @@ import request from '@/utils/request'
 
 const form = ref({
   url: '',
-  cookie: ''
+  cookie: '',
+  browserMode: false
 })
 
 const parsing = ref(false)
@@ -174,7 +185,8 @@ const handleParse = async () => {
   try {
     const response = await request.post('/import/parse-page', {
       url: form.value.url,
-      cookie: form.value.cookie || undefined
+      cookie: form.value.cookie || undefined,
+      browserMode: form.value.browserMode ? 'true' : undefined
     })
 
     if (response.data.code === 1) {
@@ -314,6 +326,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 
 .image-grid {

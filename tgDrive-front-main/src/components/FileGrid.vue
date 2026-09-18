@@ -14,8 +14,17 @@
           @click.stop
         />
       </div>
-      <div class="file-card-icon">
-        <el-icon :size="40"><Document /></el-icon>
+      <div class="file-card-preview">
+        <img
+          v-if="isImageFile(file.fileName)"
+          :src="file.downloadUrl"
+          :alt="file.fileName"
+          class="file-thumbnail"
+          loading="lazy"
+          @error="handleImageError($event)"
+          @click.stop="previewImage(file)"
+        />
+        <el-icon v-else :size="40"><Document /></el-icon>
       </div>
       <div class="file-card-name" :title="file.fileName">{{ file.fileName }}</div>
       <div class="file-card-meta">
@@ -32,9 +41,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Image Preview Dialog -->
+  <el-dialog v-model="previewVisible" title="图片预览" width="80%" top="5vh" destroy-on-close>
+    <div class="preview-container">
+      <img :src="previewUrl" :alt="previewName" class="preview-image" />
+    </div>
+    <template #footer>
+      <span class="preview-name">{{ previewName }}</span>
+      <el-button @click="previewVisible = false">关闭</el-button>
+      <el-button type="primary" @click="downloadPreview">下载</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Document } from '@element-plus/icons-vue'
 
 interface FileItem {
@@ -64,6 +86,17 @@ const emit = defineEmits<{
   'select': [file: FileItem]
 }>()
 
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewName = ref('')
+
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif']
+
+const isImageFile = (fileName: string): boolean => {
+  const ext = fileName.toLowerCase().split('.').pop()
+  return IMAGE_EXTENSIONS.includes('.' + ext)
+}
+
 const handleClick = (file: FileItem) => {
   if (props.selectable) {
     toggleSelect(file)
@@ -74,6 +107,31 @@ const handleClick = (file: FileItem) => {
 
 const toggleSelect = (file: FileItem) => {
   emit('select', file)
+}
+
+const previewImage = (file: FileItem) => {
+  previewUrl.value = file.downloadUrl
+  previewName.value = file.fileName
+  previewVisible.value = true
+}
+
+const downloadPreview = () => {
+  const link = document.createElement('a')
+  link.href = previewUrl.value
+  link.download = previewName.value
+  link.click()
+}
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+  const parent = img.parentElement
+  if (parent) {
+    const icon = document.createElement('div')
+    icon.className = 'file-card-icon-fallback'
+    icon.innerHTML = '<svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>'
+    parent.appendChild(icon)
+  }
 }
 
 const getLevelType = (level: string) => {
@@ -134,12 +192,28 @@ const parseTags = (tags: any) => {
   left: 8px;
 }
 
-.file-card-icon {
-  height: 60px;
+.file-card-preview {
+  width: 100%;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--el-text-color-secondary);
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: var(--el-fill-color-lighter);
+}
+
+.file-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.file-thumbnail:hover {
+  transform: scale(1.05);
 }
 
 .file-card-name {
@@ -179,5 +253,35 @@ const parseTags = (tags: any) => {
 
 .is-selectable .file-card {
   cursor: pointer;
+}
+
+:deep(.file-card-icon-fallback) {
+  color: var(--el-text-color-secondary);
+}
+
+/* Preview Dialog Styles */
+.preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.preview-name {
+  margin-right: auto;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
 }
 </style>
