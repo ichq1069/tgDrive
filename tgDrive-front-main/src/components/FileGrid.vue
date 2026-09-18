@@ -17,7 +17,7 @@
       <div class="file-card-preview">
         <img
           v-if="isImageFile(file.fileName)"
-          :src="file.downloadUrl"
+          :src="getFullUrl(file.downloadUrl)"
           :alt="file.fileName"
           class="file-thumbnail"
           loading="lazy"
@@ -97,6 +97,13 @@ const isImageFile = (fileName: string): boolean => {
   return IMAGE_EXTENSIONS.includes('.' + ext)
 }
 
+const getFullUrl = (url: string): string => {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  return window.location.origin + url
+}
+
 const handleClick = (file: FileItem) => {
   if (props.selectable) {
     toggleSelect(file)
@@ -110,7 +117,7 @@ const toggleSelect = (file: FileItem) => {
 }
 
 const previewImage = (file: FileItem) => {
-  previewUrl.value = file.downloadUrl
+  previewUrl.value = getFullUrl(file.downloadUrl)
   previewName.value = file.fileName
   previewVisible.value = true
 }
