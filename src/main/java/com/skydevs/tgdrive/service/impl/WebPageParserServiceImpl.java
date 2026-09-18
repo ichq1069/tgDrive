@@ -55,9 +55,23 @@ public class WebPageParserServiceImpl implements WebPageParserService {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-            conn.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+            conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+            conn.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+            conn.setRequestProperty("Accept-Encoding", "identity");
+            conn.setRequestProperty("Connection", "keep-alive");
+            conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
+            conn.setRequestProperty("Sec-Fetch-Dest", "document");
+            conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
+            conn.setRequestProperty("Sec-Fetch-Site", "none");
+            conn.setRequestProperty("Sec-Fetch-User", "?1");
+            conn.setRequestProperty("Cache-Control", "max-age=0");
             conn.setInstanceFollowRedirects(true);
+
+            // 设置Referer为来源页面
+            try {
+                URL baseUrl = new URL(pageUrl);
+                conn.setRequestProperty("Referer", baseUrl.getProtocol() + "://" + baseUrl.getHost());
+            } catch (Exception ignored) {}
 
             // 添加Cookie（如果提供）
             if (cookie != null && !cookie.isEmpty()) {
