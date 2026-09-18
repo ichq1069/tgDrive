@@ -54,6 +54,8 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
                     .setLocale("zh-CN")
             );
 
+            Page page = context.newPage();
+
             // 注入Cookie（通过JS设置，避免API兼容性问题）
             if (cookie != null && !cookie.isEmpty()) {
                 String[] pairs = cookie.split(";");
@@ -69,7 +71,6 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
                 }
             }
 
-            Page page = context.newPage();
             page.navigate(pageUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
 
             // 等待页面加载
@@ -88,7 +89,8 @@ public class BrowserPageParserServiceImpl implements WebPageParserService {
 
             // 额外提取通过JS渲染的图片
             try {
-                List<String> jsImages = page.evaluate(
+                @SuppressWarnings("unchecked")
+                List<String> jsImages = (List<String>) page.evaluate(
                     "() => Array.from(document.querySelectorAll('img')).map(img => img.src).filter(src => src && src.startsWith('http'))"
                 );
                 for (String imgUrl : jsImages) {
