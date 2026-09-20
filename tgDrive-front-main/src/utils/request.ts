@@ -29,7 +29,7 @@ longTimeoutService.interceptors.request.use((config: InternalAxiosRequestConfig)
       redirectToLogin();
       return Promise.reject(new Error('登录状态已过期，请重新登录'));
     }
-    config.headers['Authorization'] = `Bearer ${token}`;
+    config.headers['tgdrive'] = token;
   }
   return config;
 }, (error) => Promise.reject(error));
@@ -123,7 +123,7 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       return Promise.reject(new Error('登录状态已过期，请重新登录'));
     }
 
-    config.headers['Authorization'] = `Bearer ${token}`;
+    config.headers['tgdrive'] = token;
   }
   
   if (!isFormData) {

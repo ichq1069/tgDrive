@@ -29,7 +29,7 @@
           </template>
         </el-dropdown>
         <el-dropdown @command="handleUserCommand">
-          <el-avatar class="user-avatar" :size="32" src="/public/favicon.ico" />
+          <el-avatar class="user-avatar" :size="32" src="/favicon.ico" />
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>

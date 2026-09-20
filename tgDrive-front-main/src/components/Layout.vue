@@ -34,7 +34,7 @@
           <el-button v-if="!isLoggedIn" type="primary" @click="goToLogin">登录</el-button>
           <el-dropdown v-else @command="handleUserCommand" trigger="click">
             <div class="user-info">
-              <el-avatar :size="32" src="/public/favicon.ico" style="cursor: pointer;" />
+              <el-avatar :size="32" src="/favicon.ico" style="cursor: pointer;" />
               <div class="user-details">
                 <div class="username">{{ currentUsername }}</div>
                 <div class="user-role">{{ userRoleText }}</div>
