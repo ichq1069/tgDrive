@@ -32,6 +32,7 @@ const UrlImport = () => import('../views/UrlImport.vue')
 const WebScrape = () => import('../views/WebScrape.vue')
 const ContentLevelManagement = () => import('../views/ContentLevelManagement.vue')
 const TagRuleManagement = () => import('../views/TagRuleManagement.vue')
+const LinkParser = () => import('../views/LinkParser.vue')
 
 
 interface RouteMeta extends Record<string | number | symbol, unknown> {
@@ -153,6 +154,38 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'web-scrape',
         component: WebScrape,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'tele-library',
+        component: TeleLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'shared-library',
+        component: SharedLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'private-library',
+        component: PrivateLibrary,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'user'
+        } as RouteMeta
+      },
+      {
+        path: 'link-parser',
+        component: LinkParser,
         meta: {
           requiresAuth: true,
           requiredRole: 'user'
@@ -299,6 +332,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'tag-rules',
         component: TagRuleManagement,
+        meta: {
+          requiresAuth: true,
+          requiredRole: 'admin'
+        } as RouteMeta
+      },
+      {
+        path: 'link-parser',
+        component: LinkParser,
         meta: {
           requiresAuth: true,
           requiredRole: 'admin'

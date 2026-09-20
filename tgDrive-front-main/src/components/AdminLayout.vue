@@ -9,11 +9,10 @@
             <Fold v-else />
           </el-icon>
           <el-icon class="logo-icon"><Monitor /></el-icon>
-          <span class="logo-text hidden-xs-only" v-show="!isCollapsed">ST-TG网盘管理 <span class="version-badge">v{{ appVersion }}</span></span>
+          <span class="logo-text hidden-xs-only" v-show="!isCollapsed">TG-Drive 管理 <span class="version-badge">v{{ appVersion }}</span></span>
         </div>
       </div>
       <div class="header-actions">
-        <!-- New mobile sidebar toggle -->
         <el-icon class="toggle-mobile-sidebar hidden-sm-and-up" @click="isMobileSidebarOpen = true">
           <Fold />
         </el-icon>
@@ -30,11 +29,7 @@
           </template>
         </el-dropdown>
         <el-dropdown @command="handleUserCommand">
-          <el-avatar
-              class="user-avatar"
-              :size="32"
-              src="/public/favicon.ico"
-          />
+          <el-avatar class="user-avatar" :size="32" src="/public/favicon.ico" />
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
@@ -48,190 +43,132 @@
       <!-- Desktop Sidebar -->
       <el-aside v-if="!isMobile" :width="isCollapsed ? '64px' : '220px'" class="sidebar">
         <el-menu
-            :default-active="activeMenu"
-            class="sidebar-menu"
-            @select="handleSelect"
-            :collapse="isCollapsed"
-            :collapse-transition="false"
+          :default-active="activeMenu"
+          class="sidebar-menu"
+          @select="handleSelect"
+          :collapse="isCollapsed"
+          :collapse-transition="false"
         >
           <el-menu-item index="/home">
             <el-icon><HomeFilled /></el-icon>
             <template #title>首页</template>
           </el-menu-item>
-          <el-menu-item index="/fileList">
-            <el-icon><Folder /></el-icon>
-            <template #title>文件列表</template>
-          </el-menu-item>
-          <el-menu-item index="/tele-library">
-            <el-icon><Box /></el-icon>
-            <template #title>Tele 库</template>
-          </el-menu-item>
-          <el-menu-item index="/shared-library">
-            <el-icon><Share /></el-icon>
-            <template #title>共享库</template>
-          </el-menu-item>
-          <el-menu-item index="/private-library">
-            <el-icon><Lock /></el-icon>
-            <template #title>私密库</template>
-          </el-menu-item>
-          <el-menu-item index="/tags">
-            <el-icon><PriceTag /></el-icon>
-            <template #title>标签管理</template>
-          </el-menu-item>
-          <el-menu-item index="/tag-rules">
-            <el-icon><PriceTag /></el-icon>
-            <template #title>标签规则</template>
-          </el-menu-item>
-          <el-menu-item index="/gallery">
-            <el-icon><Picture /></el-icon>
-            <template #title>画廊</template>
-          </el-menu-item>
-          <el-menu-item index="/url-import">
-            <el-icon><Link /></el-icon>
-            <template #title>URL 导入</template>
-          </el-menu-item>
-          <el-menu-item index="/web-scrape">
-            <el-icon><Picture /></el-icon>
-            <template #title>网页解析</template>
-          </el-menu-item>
-          <el-menu-item index="/private-whitelist">
-            <el-icon><User /></el-icon>
-            <template #title>私密库白名单</template>
-          </el-menu-item>
-          <el-menu-item index="/redeem-codes">
-            <el-icon><Ticket /></el-icon>
-            <template #title>兑换码管理</template>
-          </el-menu-item>
-          <el-menu-item index="/user-management">
-            <el-icon><User /></el-icon>
-            <template #title>用户管理</template>
-          </el-menu-item>
-          <el-menu-item index="/changePassword">
-            <el-icon><EditPen /></el-icon>
-            <template #title>修改密码</template>
-          </el-menu-item>
-          <el-menu-item index="/">
-            <el-icon><Top /></el-icon>
-            <template #title>上传文件</template>
-          </el-menu-item>
-          <el-menu-item index="/backup">
-            <el-icon><Download /></el-icon>
-            <template #title>备份数据库</template>
-          </el-menu-item>
-          <el-menu-item index="/bot-keep-alive">
-            <el-icon><Service /></el-icon>
-            <template #title>机器人保活</template>
-          </el-menu-item>
-          <el-menu-item index="/webdav-config">
-            <el-icon><Connection /></el-icon>
-            <template #title>WebDAV配置</template>
-          </el-menu-item>
-          <el-menu-item index="/agreement">
-            <el-icon><Setting /></el-icon>
-            <template #title>用户协议</template>
-          </el-menu-item>
-          <el-menu-item index="/privacy">
-            <el-icon><Setting /></el-icon>
-            <template #title>隐私政策</template>
-          </el-menu-item>
+
+          <el-sub-menu index="file-mgmt">
+            <template #title>
+              <el-icon><Folder /></el-icon>
+              <span>文件管理</span>
+            </template>
+            <el-menu-item index="/fileList">文件列表</el-menu-item>
+            <el-menu-item index="/tele-library">Tele 库</el-menu-item>
+            <el-menu-item index="/shared-library">共享库</el-menu-item>
+            <el-menu-item index="/private-library">私密库</el-menu-item>
+            <el-menu-item index="/">上传文件</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="tools">
+            <template #title>
+              <el-icon><Link /></el-icon>
+              <span>资源工具</span>
+            </template>
+            <el-menu-item index="/gallery">画廊</el-menu-item>
+            <el-menu-item index="/url-import">URL 导入</el-menu-item>
+            <el-menu-item index="/web-scrape">网页解析</el-menu-item>
+            <el-menu-item index="/link-parser">链接解析</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="content-mgmt">
+            <template #title>
+              <el-icon><PriceTag /></el-icon>
+              <span>内容管理</span>
+            </template>
+            <el-menu-item index="/tags">标签管理</el-menu-item>
+            <el-menu-item index="/tag-rules">标签规则</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="sys-mgmt">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item index="/user-management">用户管理</el-menu-item>
+            <el-menu-item index="/private-whitelist">私密库白名单</el-menu-item>
+            <el-menu-item index="/redeem-codes">兑换码管理</el-menu-item>
+            <el-menu-item index="/changePassword">修改密码</el-menu-item>
+            <el-menu-item index="/backup">备份数据库</el-menu-item>
+            <el-menu-item index="/webdav-config">WebDAV配置</el-menu-item>
+            <el-menu-item index="/agreement">用户协议</el-menu-item>
+            <el-menu-item index="/privacy">隐私政策</el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
 
       <!-- Mobile Sidebar Drawer -->
       <el-drawer
-          v-if="isMobile"
-          v-model="isMobileSidebarOpen"
-          direction="ltr"
-          :with-header="false"
-          size="220px"
+        v-if="isMobile"
+        v-model="isMobileSidebarOpen"
+        direction="ltr"
+        :with-header="false"
+        size="220px"
       >
         <el-menu
-            :default-active="activeMenu"
-            class="sidebar-menu"
-            @select="handleSelectAndCloseDrawer"
-            :collapse="false"
-            :collapse-transition="false"
+          :default-active="activeMenu"
+          class="sidebar-menu"
+          @select="handleSelectAndCloseDrawer"
+          :collapse="false"
+          :collapse-transition="false"
         >
           <el-menu-item index="/home">
             <el-icon><HomeFilled /></el-icon>
             <template #title>首页</template>
           </el-menu-item>
-          <el-menu-item index="/fileList">
-            <el-icon><Folder /></el-icon>
-            <template #title>文件列表</template>
-          </el-menu-item>
-          <el-menu-item index="/tele-library">
-            <el-icon><Box /></el-icon>
-            <template #title>Tele 库</template>
-          </el-menu-item>
-          <el-menu-item index="/shared-library">
-            <el-icon><Share /></el-icon>
-            <template #title>共享库</template>
-          </el-menu-item>
-          <el-menu-item index="/private-library">
-            <el-icon><Lock /></el-icon>
-            <template #title>私密库</template>
-          </el-menu-item>
-          <el-menu-item index="/tags">
-            <el-icon><PriceTag /></el-icon>
-            <template #title>标签管理</template>
-          </el-menu-item>
-          <el-menu-item index="/tag-rules">
-            <el-icon><PriceTag /></el-icon>
-            <template #title>标签规则</template>
-          </el-menu-item>
-          <el-menu-item index="/gallery">
-            <el-icon><Picture /></el-icon>
-            <template #title>画廊</template>
-          </el-menu-item>
-          <el-menu-item index="/url-import">
-            <el-icon><Link /></el-icon>
-            <template #title>URL 导入</template>
-          </el-menu-item>
-          <el-menu-item index="/web-scrape">
-            <el-icon><Picture /></el-icon>
-            <template #title>网页解析</template>
-          </el-menu-item>
-          <el-menu-item index="/private-whitelist">
-            <el-icon><User /></el-icon>
-            <template #title>私密库白名单</template>
-          </el-menu-item>
-          <el-menu-item index="/redeem-codes">
-            <el-icon><Ticket /></el-icon>
-            <template #title>兑换码管理</template>
-          </el-menu-item>
-          <el-menu-item index="/user-management">
-            <el-icon><User /></el-icon>
-            <template #title>用户管理</template>
-          </el-menu-item>
-          <el-menu-item index="/changePassword">
-            <el-icon><EditPen /></el-icon>
-            <template #title>修改密码</template>
-          </el-menu-item>
-          <el-menu-item index="/">
-            <el-icon><Top /></el-icon>
-            <template #title>上传文件</template>
-          </el-menu-item>
-          <el-menu-item index="/backup">
-            <el-icon><Download /></el-icon>
-            <template #title>备份数据库</template>
-          </el-menu-item>
-          <el-menu-item index="/bot-keep-alive">
-            <el-icon><Service /></el-icon>
-            <template #title>机器人保活</template>
-          </el-menu-item>
-          <el-menu-item index="/webdav-config">
-            <el-icon><Connection /></el-icon>
-            <template #title>WebDAV配置</template>
-          </el-menu-item>
-          <el-menu-item index="/agreement">
-            <el-icon><Setting /></el-icon>
-            <template #title>用户协议</template>
-          </el-menu-item>
-          <el-menu-item index="/privacy">
-            <el-icon><Setting /></el-icon>
-            <template #title>隐私政策</template>
-          </el-menu-item>
+
+          <el-sub-menu index="file-mgmt">
+            <template #title>
+              <el-icon><Folder /></el-icon>
+              <span>文件管理</span>
+            </template>
+            <el-menu-item index="/fileList">文件列表</el-menu-item>
+            <el-menu-item index="/tele-library">Tele 库</el-menu-item>
+            <el-menu-item index="/shared-library">共享库</el-menu-item>
+            <el-menu-item index="/private-library">私密库</el-menu-item>
+            <el-menu-item index="/">上传文件</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="tools">
+            <template #title>
+              <el-icon><Link /></el-icon>
+              <span>资源工具</span>
+            </template>
+            <el-menu-item index="/gallery">画廊</el-menu-item>
+            <el-menu-item index="/url-import">URL 导入</el-menu-item>
+            <el-menu-item index="/web-scrape">网页解析</el-menu-item>
+            <el-menu-item index="/link-parser">链接解析</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="content-mgmt">
+            <template #title>
+              <el-icon><PriceTag /></el-icon>
+              <span>内容管理</span>
+            </template>
+            <el-menu-item index="/tags">标签管理</el-menu-item>
+            <el-menu-item index="/tag-rules">标签规则</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="sys-mgmt">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item index="/user-management">用户管理</el-menu-item>
+            <el-menu-item index="/private-whitelist">私密库白名单</el-menu-item>
+            <el-menu-item index="/redeem-codes">兑换码管理</el-menu-item>
+            <el-menu-item index="/changePassword">修改密码</el-menu-item>
+            <el-menu-item index="/backup">备份数据库</el-menu-item>
+            <el-menu-item index="/webdav-config">WebDAV配置</el-menu-item>
+            <el-menu-item index="/agreement">用户协议</el-menu-item>
+            <el-menu-item index="/privacy">隐私政策</el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-drawer>
 
@@ -247,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, shallowRef } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   HomeFilled, Folder, Top, EditPen, Sunny, Moon, Expand, Fold, Download, Monitor, SwitchButton, Service, Connection, Setting, User,
@@ -266,10 +203,9 @@ const appVersion = APP_VERSION
 const activeMenu = computed(() => route.path)
 const isCollapsed = ref(false)
 const theme = ref<Theme>('auto')
-const isMobile = ref(false) // New ref for mobile detection
-const isMobileSidebarOpen = ref(false) // New ref for mobile sidebar drawer
+const isMobile = ref(false)
+const isMobileSidebarOpen = ref(false)
 
-// --- Theme Switching Logic ---
 const themeIcon = computed(() => {
   if (theme.value === 'light') return Sunny
   if (theme.value === 'dark') return Moon
@@ -277,10 +213,7 @@ const themeIcon = computed(() => {
 })
 
 const applyTheme = () => {
-  // 添加主题切换动画类
   document.body.classList.add('theme-switching')
-
-  // 延迟应用主题以配合动画
   setTimeout(() => {
     if (theme.value === 'auto') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
@@ -289,8 +222,6 @@ const applyTheme = () => {
       document.documentElement.classList.toggle('dark', theme.value === 'dark')
     }
   }, 80)
-
-  // 移除动画类
   setTimeout(() => {
     document.body.classList.remove('theme-switching')
   }, 600)
@@ -299,60 +230,42 @@ const applyTheme = () => {
 const handleThemeCommand = (command: Theme) => {
   theme.value = command
   localStorage.setItem('theme', command)
-
-  // 添加触觉反馈（如果支持）
-  if ('vibrate' in navigator) {
-    navigator.vibrate(50)
-  }
-
+  if ('vibrate' in navigator) navigator.vibrate(50)
   applyTheme()
 }
 
 const systemThemeChangeHandler = (e: MediaQueryListEvent) => {
   if (theme.value === 'auto') {
-    // 系统主题变化时也添加动画
     document.body.classList.add('theme-switching')
-
     setTimeout(() => {
       document.documentElement.classList.toggle('dark', e.matches)
     }, 80)
-
     setTimeout(() => {
       document.body.classList.remove('theme-switching')
     }, 600)
   }
 }
 
-// --- Responsive Logic ---
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768 // Define mobile breakpoint
+  isMobile.value = window.innerWidth < 768
   if (isMobile.value) {
-    isCollapsed.value = true // Collapse sidebar on mobile
+    isCollapsed.value = true
   } else {
-    // Restore sidebar state on desktop if it was expanded before
     const savedSidebarState = localStorage.getItem('sidebarState')
     isCollapsed.value = savedSidebarState === 'collapsed'
   }
 }
 
-// --- Component Lifecycle ---
 onMounted(() => {
-  // Initial check for mobile
   checkMobile()
   window.addEventListener('resize', checkMobile)
-
-  // Restore sidebar state (only for desktop, mobile state is handled by checkMobile)
   if (!isMobile.value) {
     const savedSidebarState = localStorage.getItem('sidebarState')
     isCollapsed.value = savedSidebarState === 'collapsed'
   }
-
-  // Restore theme
   const savedTheme = localStorage.getItem('theme') as Theme | null
   theme.value = savedTheme || 'auto'
   applyTheme()
-
-  // 检查版本更新
   const hasUpdate = checkVersionUpdate()
   if (hasUpdate) {
     ElMessageBox.alert(
@@ -370,19 +283,14 @@ onMounted(() => {
       window.location.reload()
     }).catch(() => {})
   }
-
-  // Add listener for system theme changes
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeChangeHandler)
 })
 
 onBeforeUnmount(() => {
-  // Clean up listeners
   window.removeEventListener('resize', checkMobile)
   window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeChangeHandler)
 })
 
-
-// --- Other Logic ---
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
   localStorage.setItem('sidebarState', isCollapsed.value ? 'collapsed' : 'expanded')
@@ -390,9 +298,9 @@ const toggleSidebar = () => {
 
 const handleUserCommand = (command: string) => {
   if (command === 'logout') {
-    localStorage.removeItem('token');
-    localStorage.removeItem('tokenExpireAt');
-    router.push('/login');
+    localStorage.removeItem('token')
+    localStorage.removeItem('tokenExpireAt')
+    router.push('/login')
   }
 }
 
@@ -402,12 +310,11 @@ const handleSelect = (index: string) => {
 
 const handleSelectAndCloseDrawer = (index: string) => {
   handleSelect(index)
-  isMobileSidebarOpen.value = false // Close drawer after selection
+  isMobileSidebarOpen.value = false
 }
 </script>
 
 <style scoped>
-/* Basic layout structure */
 .app-container {
   height: 100vh;
   width: 100vw;
@@ -470,6 +377,16 @@ const handleSelectAndCloseDrawer = (index: string) => {
   border-right: none;
 }
 
+.sidebar-menu :deep(.el-sub-menu__title) {
+  font-size: 14px;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  font-size: 13px;
+  min-width: 0;
+  padding-left: 48px !important;
+}
+
 .main-content {
   padding: 20px;
   background-color: var(--background-color);
@@ -477,7 +394,6 @@ const handleSelectAndCloseDrawer = (index: string) => {
   overflow-y: auto;
 }
 
-/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -488,36 +404,30 @@ const handleSelectAndCloseDrawer = (index: string) => {
   opacity: 0;
 }
 
-/* Responsive styles */
-/* Hide mobile elements on desktop */
 .hidden-sm-and-up {
   display: none !important;
 }
 
-@media (max-width: 767px) { /* Mobile breakpoint */
+@media (max-width: 767px) {
   .hidden-xs-only {
     display: none !important;
   }
   .hidden-sm-and-up {
-    display: flex !important; /* Or block, depending on element */
+    display: flex !important;
   }
-
   .header {
-    padding: 0 15px; /* Smaller padding on mobile */
+    padding: 0 15px;
   }
-
   .header-logo .logo-text {
-    display: none; /* Hide logo text on mobile */
+    display: none;
   }
-
   .toggle-mobile-sidebar {
     cursor: pointer;
     font-size: 20px;
-    margin-right: 10px; /* Space between toggle and logo */
+    margin-right: 10px;
   }
-
   .main-content {
-    padding: 10px; /* Smaller padding for main content on mobile */
+    padding: 10px;
   }
 }
 </style>
