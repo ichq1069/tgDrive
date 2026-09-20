@@ -35,24 +35,24 @@ public class ImportController {
 
     @SaCheckLogin
     @PostMapping("/url")
-    public Result<String> importFromUrl(@RequestBody UrlImportRequest request) {
+    public Result<String> importFromUrl(@RequestBody UrlImportRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request.getUrls() == null || request.getUrls().isEmpty()) {
             return Result.error("URL列表不能为空");
         }
         // 异步执行导入任务
         Long userId = StpUtil.getLoginIdAsLong();
-        importService.importFromUrls(request.getUrls(), userId, null);
+        importService.importFromUrls(request.getUrls(), userId, null, httpRequest);
         return Result.success("导入任务已提交，共 " + request.getUrls().size() + " 个文件");
     }
 
     @SaCheckLogin
     @PostMapping("/url-with-source")
-    public Result<String> importFromUrlWithSource(@RequestBody UrlImportRequest request) {
+    public Result<String> importFromUrlWithSource(@RequestBody UrlImportRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request.getUrls() == null || request.getUrls().isEmpty()) {
             return Result.error("URL列表不能为空");
         }
         Long userId = StpUtil.getLoginIdAsLong();
-        importService.importFromUrls(request.getUrls(), userId, request.getSourcePage(), request.getTags(), request.getContentLevel());
+        importService.importFromUrls(request.getUrls(), userId, request.getSourcePage(), request.getTags(), request.getContentLevel(), httpRequest);
         return Result.success("导入任务已提交，共 " + request.getUrls().size() + " 个文件");
     }
 
@@ -88,7 +88,7 @@ public class ImportController {
 
     @SaCheckLogin
     @PostMapping("/parse-and-import")
-    public Result<String> parseAndImport(@RequestBody Map<String, Object> request) {
+    public Result<String> parseAndImport(@RequestBody Map<String, Object> request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         String url = (String) request.get("url");
         String cookie = (String) request.get("cookie");
         @SuppressWarnings("unchecked")
@@ -102,7 +102,7 @@ public class ImportController {
         }
         
         Long userId = StpUtil.getLoginIdAsLong();
-        importService.importFromUrls(imageUrls, userId, url);
+        importService.importFromUrls(imageUrls, userId, url, httpRequest);
         return Result.success("导入任务已提交，共 " + imageUrls.size() + " 个文件，来源页面: " + url);
     }
 }

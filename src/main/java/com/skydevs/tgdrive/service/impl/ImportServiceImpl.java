@@ -9,6 +9,7 @@ import com.skydevs.tgdrive.service.FileStorageService;
 import com.skydevs.tgdrive.service.ImportService;
 import com.skydevs.tgdrive.service.TagRuleService;
 import com.skydevs.tgdrive.service.TagService;
+import com.skydevs.tgdrive.utils.StringUtil;
 import com.skydevs.tgdrive.utils.UserFriendly;
 import com.skydevs.tgdrive.websocket.UploadProgressWebSocketHandler;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,12 +65,12 @@ public class ImportServiceImpl implements ImportService {
     private static final int READ_TIMEOUT = 60000;
 
     @Override
-    public void importFromUrls(List<String> urls, Long userId, String sourcePage) {
-        importFromUrls(urls, userId, sourcePage, null, null);
+    public void importFromUrls(List<String> urls, Long userId, String sourcePage, HttpServletRequest request) {
+        importFromUrls(urls, userId, sourcePage, null, null, request);
     }
 
     @Override
-    public void importFromUrls(List<String> urls, Long userId, String sourcePage, List<String> tags, String contentLevel) {
+    public void importFromUrls(List<String> urls, Long userId, String sourcePage, List<String> tags, String contentLevel, HttpServletRequest request) {
         int total = urls.size();
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger failed = new AtomicInteger(0);
@@ -124,8 +125,9 @@ public class ImportServiceImpl implements ImportService {
                     InputStream inputStream = new ByteArrayInputStream(fileBytes);
                     String fileId = fileStorageService.uploadFile(inputStream, filename, (long) fileBytes.length);
 
-                    // 构建下载链接
-                    String downloadUrl = "/d/" + fileId;
+                    // 构建下载链接（使用完整URL）
+                    String prefix = StringUtil.getPrefix(request);
+                    String downloadUrl = prefix + "/d/" + fileId;
 
                     // 确定 contentLevel：优先使用传入的值，否则从用户等级获取
                     String finalContentLevel = contentLevel;
