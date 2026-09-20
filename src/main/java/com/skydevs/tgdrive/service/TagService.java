@@ -21,4 +21,6 @@ public interface TagService {
     void addFileTags(String fileId, List<Long> tagIds);
 
     List<Tag> listByFileId(String fileId);
+
+    Tag findByName(String name);
 }

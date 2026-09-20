@@ -65,6 +65,11 @@ public class ImportServiceImpl implements ImportService {
 
     @Override
     public void importFromUrls(List<String> urls, Long userId, String sourcePage) {
+        importFromUrls(urls, userId, sourcePage, null, null);
+    }
+
+    @Override
+    public void importFromUrls(List<String> urls, Long userId, String sourcePage, List<String> tags, String contentLevel) {
         int total = urls.size();
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger failed = new AtomicInteger(0);
@@ -122,12 +127,17 @@ public class ImportServiceImpl implements ImportService {
                     // 构建下载链接
                     String downloadUrl = "/d/" + fileId;
 
-                    // 获取用户会员等级
-                    String contentLevel = null;
-                    User user = userMapper.getUserById(userId);
-                    if (user != null && user.getMemberLevel() != null) {
-                        contentLevel = user.getMemberLevel();
+                    // 确定 contentLevel：优先使用传入的值，否则从用户等级获取
+                    String finalContentLevel = contentLevel;
+                    if (finalContentLevel == null || finalContentLevel.isEmpty()) {
+                        User user = userMapper.getUserById(userId);
+                        if (user != null && user.getMemberLevel() != null) {
+                            finalContentLevel = user.getMemberLevel();
+                        }
                     }
+
+                    // 确定 library：vvip 内容直接进入私密库
+                    String targetLibrary = "vvip".equals(finalContentLevel) ? "private" : "tele";
 
                     // 入库（包含原始URL和来源页面）
                     FileInfo fileInfo = FileInfo.builder()
@@ -138,19 +148,37 @@ public class ImportServiceImpl implements ImportService {
                             .uploadTime(LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC))
                             .downloadUrl(downloadUrl)
                             .userId(userId)
-                            .library("tele")
+                            .library(targetLibrary)
                             .fileHash(fileHash)
                             .originalUrl(url)
                             .sourcePage(sourcePage)
-                            .contentLevel(contentLevel)
+                            .contentLevel(finalContentLevel)
+                            .inRandomPool(false)
                             .build();
                     fileMapper.insertFile(fileInfo);
+
+                    log.info("URL导入入库: {} -> library={}, contentLevel={}", filename, targetLibrary, finalContentLevel);
 
                     // Auto-apply tags based on rules
                     List<Long> matchedTagIds = tagRuleService.matchTagsForFile(filename);
                     if (!matchedTagIds.isEmpty()) {
                         tagService.addFileTags(fileId, matchedTagIds);
                         log.info("URL导入自动打标签: {} -> tags={}", filename, matchedTagIds);
+                    }
+
+                    // Apply manually selected tags
+                    if (tags != null && !tags.isEmpty()) {
+                        List<Long> manualTagIds = new ArrayList<>();
+                        for (String tagName : tags) {
+                            var existingTag = tagService.findByName(tagName.trim());
+                            if (existingTag != null) {
+                                manualTagIds.add(existingTag.getId());
+                            }
+                        }
+                        if (!manualTagIds.isEmpty()) {
+                            tagService.addFileTags(fileId, manualTagIds);
+                            log.info("URL导入手动打标签: {} -> tags={}", filename, manualTagIds);
+                        }
                     }
 
                     int done = completed.incrementAndGet();

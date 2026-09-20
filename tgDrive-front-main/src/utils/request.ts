@@ -8,8 +8,42 @@ const pendingRequests = new Map<string, AbortController>();
 
 const service: AxiosInstance = axios.create({
   baseURL: '/api',
-  timeout: 30000 // 30秒超时
+  timeout: 30000 // 默认30秒超时
 });
+
+// 允许特定请求设置更长超时
+export const longTimeoutService: AxiosInstance = axios.create({
+  baseURL: '/api',
+  timeout: 120000 // 120秒超时（用于浏览器模式解析等耗时操作）
+});
+
+// longTimeoutService 复用相同的拦截器逻辑
+longTimeoutService.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = localStorage.getItem('token');
+  const expireAtRaw = localStorage.getItem('tokenExpireAt');
+  if (token) {
+    const expireAt = expireAtRaw ? Number(expireAtRaw) : null;
+    if (expireAt !== null && !Number.isNaN(expireAt) && Date.now() >= expireAt) {
+      callGlobalClearUserInfo();
+      ElMessage.warning('登录状态已过期，请重新登录');
+      redirectToLogin();
+      return Promise.reject(new Error('登录状态已过期，请重新登录'));
+    }
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
+longTimeoutService.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      callGlobalClearUserInfo();
+      redirectToLogin();
+    }
+    return Promise.reject(error);
+  }
+);
 
 const redirectToLogin = () => {
   const currentRoute = router.currentRoute.value;

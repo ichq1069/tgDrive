@@ -1,5 +1,6 @@
 package com.skydevs.tgdrive.config;
 
+import com.skydevs.tgdrive.websocket.ParseProgressWebSocketHandler;
 import com.skydevs.tgdrive.websocket.UploadProgressWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -15,21 +16,21 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final UploadProgressWebSocketHandler uploadProgressWebSocketHandler;
+    private final ParseProgressWebSocketHandler parseProgressWebSocketHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(uploadProgressWebSocketHandler, "/ws/upload-progress")
-                .setAllowedOrigins("*"); // 在生产环境中应该限制具体的域名
+        registry.addHandler(uploadProgressWebSocketHandler, "/ws/upload-progress", "/ws/import-progress")
+                .setAllowedOrigins("*");
+        registry.addHandler(parseProgressWebSocketHandler, "/ws/parse-progress")
+                .setAllowedOrigins("*");
     }
 
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
         ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
-        // 设置WebSocket超时时间为5分钟（单位：毫秒）
         container.setMaxSessionIdleTimeout(5 * 60 * 1000L);
-        // 设置文本消息缓冲区大小
         container.setMaxTextMessageBufferSize(8192);
-        // 设置二进制消息缓冲区大小
         container.setMaxBinaryMessageBufferSize(8192);
         return container;
     }

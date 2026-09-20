@@ -131,6 +131,9 @@ public class FileStorageServiceImpl implements FileStorageService {
                     contentLevel = user.getMemberLevel();
                 }
 
+                // 确定 library：vvip 内容直接进入私密库
+                String targetLibrary = "vvip".equals(contentLevel) ? "private" : "tele";
+
                 FileInfo fileInfo = FileInfo.builder()
                         .fileId(fileID)
                         .size(UserFriendly.humanReadableFileSize(size))
@@ -139,7 +142,7 @@ public class FileStorageServiceImpl implements FileStorageService {
                         .downloadUrl(downloadUrl)
                         .fileName(filename)
                         .userId(userId)
-                        .library("tele")
+                        .library(targetLibrary)
                         .fileHash(fileHash)
                         .contentLevel(contentLevel)
                         .build();

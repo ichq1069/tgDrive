@@ -21,6 +21,7 @@
           :alt="file.fileName"
           class="file-thumbnail"
           loading="lazy"
+          decoding="async"
           @error="handleImageError($event)"
           @click.stop="previewImage(file)"
         />

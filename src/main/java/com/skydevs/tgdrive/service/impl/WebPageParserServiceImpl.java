@@ -26,6 +26,11 @@ public class WebPageParserServiceImpl implements WebPageParserService {
 
     @Override
     public ParseResult parseWebPage(String pageUrl, String cookie) {
+        return parseWebPage(pageUrl, cookie, null);
+    }
+
+    @Override
+    public ParseResult parseWebPage(String pageUrl, String cookie, String cssSelector) {
         try {
             // 下载网页内容
             String html = downloadPage(pageUrl, cookie);
@@ -36,15 +41,93 @@ public class WebPageParserServiceImpl implements WebPageParserService {
             // 提取页面标题
             String title = extractTitle(html);
 
-            // 提取所有图片URL
+            // 如果指定了CSS选择器，尝试缩小提取范围
+            if (cssSelector != null && !cssSelector.trim().isEmpty()) {
+                html = narrowHtmlBySelector(html, cssSelector.trim());
+            }
+
+            // 提取所有图片/视频URL
             List<ImageInfo> images = extractImages(html, pageUrl);
 
-            log.info("网页解析完成: URL={}, 标题={}, 图片数={}", pageUrl, title, images.size());
+            log.info("网页解析完成: URL={}, 标题={}, 资源数={}", pageUrl, title, images.size());
             return new ParseResult(true, title, images, null);
 
         } catch (Exception e) {
             log.error("网页解析失败: {} -> {}", pageUrl, e.getMessage());
             return new ParseResult(false, null, null, "解析失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据CSS选择器缩小HTML范围
+     * 支持简单的选择器：标签名、.class、#id、tag.class、tag#id
+     */
+    private String narrowHtmlBySelector(String html, String selector) {
+        try {
+            // 解析选择器：提取标签名、class、id
+            String tag = null;
+            String className = null;
+            String id = null;
+
+            if (selector.startsWith("#")) {
+                id = selector.substring(1);
+            } else if (selector.startsWith(".")) {
+                className = selector.substring(1);
+            } else {
+                String[] parts = selector.split("(?=[.#])");
+                tag = parts[0].toLowerCase();
+                if (parts.length > 1) {
+                    if (parts[1].startsWith(".")) className = parts[1].substring(1);
+                    else if (parts[1].startsWith("#")) id = parts[1].substring(1);
+                }
+            }
+
+            StringBuilder matched = new StringBuilder();
+
+            if (id != null) {
+                // 按ID匹配
+                Pattern p = Pattern.compile(
+                    "<(?:div|section|article|main|content|body)[^>]*\\bid\\s*=\\s*[\"']" + Pattern.quote(id) + "[\"'][^>]*>(.*?)</(?:div|section|article|main|content|body)>",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+                );
+                Matcher m = p.matcher(html);
+                while (m.find()) { matched.append(m.group(0)); }
+            } else if (className != null && tag != null) {
+                // tag.class 匹配
+                Pattern p = Pattern.compile(
+                    "<" + Pattern.quote(tag) + "[^>]*\\bclass\\s*=\\s*[\"'][^\"']*\\b" + Pattern.quote(className) + "\\b[^\"']*[\"'][^>]*>(.*?)</" + Pattern.quote(tag) + ">",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+                );
+                Matcher m = p.matcher(html);
+                while (m.find()) { matched.append(m.group(0)); }
+            } else if (className != null) {
+                // .class 匹配（任意标签）
+                Pattern p = Pattern.compile(
+                    "<(?:div|section|article|main|ul|ol|table|figure|picture)[^>]*\\bclass\\s*=\\s*[\"'][^\"']*\\b" + Pattern.quote(className) + "\\b[^\"']*[\"'][^>]*>.*?</(?:div|section|article|main|ul|ol|table|figure|picture)>",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+                );
+                Matcher m = p.matcher(html);
+                while (m.find()) { matched.append(m.group(0)); }
+            } else if (tag != null) {
+                // 纯标签匹配
+                Pattern p = Pattern.compile(
+                    "<" + Pattern.quote(tag) + "[^>]*>.*?</" + Pattern.quote(tag) + ">",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+                );
+                Matcher m = p.matcher(html);
+                while (m.find()) { matched.append(m.group(0)); }
+            }
+
+            if (matched.length() > 0) {
+                log.info("CSS选择器 '{}' 匹配到 {} 字符", selector, matched.length());
+                return matched.toString();
+            } else {
+                log.warn("CSS选择器 '{}' 未匹配到内容，使用全文提取", selector);
+                return html;
+            }
+        } catch (Exception e) {
+            log.warn("CSS选择器解析失败: {} -> {}", selector, e.getMessage());
+            return html;
         }
     }
 
@@ -206,6 +289,49 @@ public class WebPageParserServiceImpl implements WebPageParserService {
             if (imgUrl != null && !seenUrls.contains(imgUrl)) {
                 seenUrls.add(imgUrl);
                 images.add(new ImageInfo(imgUrl, ""));
+            }
+        }
+
+        // 6. 提取 <video> 标签的 src 和 poster
+        Pattern videoPattern = Pattern.compile(
+            "<video[^>]+(?:src|data-src)\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+        );
+        Matcher videoMatcher = videoPattern.matcher(html);
+        while (videoMatcher.find()) {
+            String videoUrl = resolveUrl(videoMatcher.group(1), baseUrl);
+            if (videoUrl != null && !seenUrls.contains(videoUrl)) {
+                seenUrls.add(videoUrl);
+                String poster = extractAttr(videoMatcher.group(0), "poster");
+                images.add(new ImageInfo(videoUrl, poster, "video"));
+            }
+        }
+
+        // 7. 提取 <video> 内部 <source> 标签
+        Pattern videoSourcePattern = Pattern.compile(
+            "<source[^>]+src\\s*=\\s*[\"']([^\"']+)[\"'][^>]*type\\s*=\\s*[\"']video/[^\"']+[\"'][^>]*>",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+        );
+        Matcher videoSourceMatcher = videoSourcePattern.matcher(html);
+        while (videoSourceMatcher.find()) {
+            String videoUrl = resolveUrl(videoSourceMatcher.group(1), baseUrl);
+            if (videoUrl != null && !seenUrls.contains(videoUrl)) {
+                seenUrls.add(videoUrl);
+                images.add(new ImageInfo(videoUrl, "", "video"));
+            }
+        }
+
+        // 8. 提取 <a> 标签中的视频直链
+        Pattern aVideoPattern = Pattern.compile(
+            "<a[^>]+href\\s*=\\s*[\"']([^\"']+(?:\\.mp4|\\.webm|\\.ogg|\\.mov)(?:\\?[^\"']*)?)[\"'][^>]*>",
+            Pattern.CASE_INSENSITIVE
+        );
+        Matcher aVideoMatcher = aVideoPattern.matcher(html);
+        while (aVideoMatcher.find()) {
+            String videoUrl = resolveUrl(aVideoMatcher.group(1), baseUrl);
+            if (videoUrl != null && !seenUrls.contains(videoUrl)) {
+                seenUrls.add(videoUrl);
+                images.add(new ImageInfo(videoUrl, "", "video"));
             }
         }
 

@@ -13,6 +13,15 @@ public interface WebPageParserService {
     ParseResult parseWebPage(String url, String cookie);
 
     /**
+     * 解析网页并提取图片URL列表（指定设备模式和CSS选择器）
+     * @param url 网页URL
+     * @param cookie 可选的Cookie
+     * @param cssSelector 可选的CSS选择器，限定提取范围
+     * @return 图片URL列表
+     */
+    ParseResult parseWebPage(String url, String cookie, String cssSelector);
+
+    /**
      * 解析结果
      */
     class ParseResult {
@@ -41,11 +50,12 @@ public interface WebPageParserService {
     }
 
     /**
-     * 图片信息
+     * 图片/视频信息
      */
     class ImageInfo {
         private String url;
         private String alt;
+        private String type;  // "image" or "video"
         private int width;
         private int height;
 
@@ -54,12 +64,21 @@ public interface WebPageParserService {
         public ImageInfo(String url, String alt) {
             this.url = url;
             this.alt = alt;
+            this.type = "image";
+        }
+
+        public ImageInfo(String url, String alt, String type) {
+            this.url = url;
+            this.alt = alt;
+            this.type = type;
         }
 
         public String getUrl() { return url; }
         public void setUrl(String url) { this.url = url; }
         public String getAlt() { return alt; }
         public void setAlt(String alt) { this.alt = alt; }
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
         public int getWidth() { return width; }
         public void setWidth(int width) { this.width = width; }
         public int getHeight() { return height; }

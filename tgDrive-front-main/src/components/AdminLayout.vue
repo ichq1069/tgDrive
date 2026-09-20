@@ -9,7 +9,7 @@
             <Fold v-else />
           </el-icon>
           <el-icon class="logo-icon"><Monitor /></el-icon>
-          <span class="logo-text hidden-xs-only" v-show="!isCollapsed">ST-TG网盘管理</span>
+          <span class="logo-text hidden-xs-only" v-show="!isCollapsed">ST-TG网盘管理 <span class="version-badge">v{{ appVersion }}</span></span>
         </div>
       </div>
       <div class="header-actions">
@@ -77,10 +77,6 @@
           <el-menu-item index="/tags">
             <el-icon><PriceTag /></el-icon>
             <template #title>标签管理</template>
-          </el-menu-item>
-          <el-menu-item index="/content-levels">
-            <el-icon><Lock /></el-icon>
-            <template #title>权限级别</template>
           </el-menu-item>
           <el-menu-item index="/tag-rules">
             <el-icon><PriceTag /></el-icon>
@@ -180,10 +176,6 @@
             <el-icon><PriceTag /></el-icon>
             <template #title>标签管理</template>
           </el-menu-item>
-          <el-menu-item index="/content-levels">
-            <el-icon><Lock /></el-icon>
-            <template #title>权限级别</template>
-          </el-menu-item>
           <el-menu-item index="/tag-rules">
             <el-icon><PriceTag /></el-icon>
             <template #title>标签规则</template>
@@ -262,11 +254,14 @@ import {
   Box, Share, Lock, PriceTag, Picture, Ticket, Link
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { APP_VERSION, checkVersionUpdate, markVersionSeen } from '@/version'
+import { ElMessageBox } from 'element-plus'
 
 type Theme = 'light' | 'dark' | 'auto'
 
 const router = useRouter()
 const route = useRoute()
+const appVersion = APP_VERSION
 
 const activeMenu = computed(() => route.path)
 const isCollapsed = ref(false)
@@ -357,6 +352,25 @@ onMounted(() => {
   theme.value = savedTheme || 'auto'
   applyTheme()
 
+  // 检查版本更新
+  const hasUpdate = checkVersionUpdate()
+  if (hasUpdate) {
+    ElMessageBox.alert(
+      '页面已更新，刷新以获取最新版本。',
+      '版本更新',
+      {
+        confirmButtonText: '刷新页面',
+        type: 'info',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+      }
+    ).then(() => {
+      markVersionSeen()
+      window.location.reload()
+    }).catch(() => {})
+  }
+
   // Add listener for system theme changes
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeChangeHandler)
 })
@@ -426,6 +440,13 @@ const handleSelectAndCloseDrawer = (index: string) => {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-color);
+}
+
+.version-badge {
+  font-size: 10px;
+  color: #909399;
+  font-weight: 400;
+  margin-left: 4px;
 }
 
 .toggle-sidebar {

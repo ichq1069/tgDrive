@@ -8,4 +8,7 @@ import java.util.List;
 public class UrlImportRequest {
     private List<String> urls;
     private String sourcePage;
+    private List<String> tags;
+    private String contentLevel;
+    private String cookie;
 }

@@ -297,14 +297,6 @@ const routes: Array<RouteRecordRaw> = [
         } as RouteMeta
       },
       {
-        path: 'content-levels',
-        component: ContentLevelManagement,
-        meta: {
-          requiresAuth: true,
-          requiredRole: 'admin'
-        } as RouteMeta
-      },
-      {
         path: 'tag-rules',
         component: TagRuleManagement,
         meta: {

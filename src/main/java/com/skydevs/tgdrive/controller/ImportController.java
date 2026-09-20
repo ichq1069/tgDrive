@@ -6,7 +6,8 @@ import com.skydevs.tgdrive.dto.UrlImportRequest;
 import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.ImportService;
 import com.skydevs.tgdrive.service.WebPageParserService;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.skydevs.tgdrive.service.impl.BrowserPageParserServiceImpl;
+import com.skydevs.tgdrive.websocket.ParseProgressWebSocketHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,15 +19,18 @@ public class ImportController {
 
     private final ImportService importService;
     private final WebPageParserService webPageParserService;
-    private final WebPageParserService browserPageParserService;
+    private final BrowserPageParserServiceImpl browserPageParserService;
+    private final ParseProgressWebSocketHandler parseProgressWebSocketHandler;
 
     public ImportController(
             ImportService importService,
             WebPageParserService webPageParserService,
-            @Qualifier("browserPageParser") WebPageParserService browserPageParserService) {
+            BrowserPageParserServiceImpl browserPageParserService,
+            ParseProgressWebSocketHandler parseProgressWebSocketHandler) {
         this.importService = importService;
         this.webPageParserService = webPageParserService;
         this.browserPageParserService = browserPageParserService;
+        this.parseProgressWebSocketHandler = parseProgressWebSocketHandler;
     }
 
     @SaCheckLogin
@@ -48,7 +52,7 @@ public class ImportController {
             return Result.error("URL列表不能为空");
         }
         Long userId = StpUtil.getLoginIdAsLong();
-        importService.importFromUrls(request.getUrls(), userId, request.getSourcePage());
+        importService.importFromUrls(request.getUrls(), userId, request.getSourcePage(), request.getTags(), request.getContentLevel());
         return Result.success("导入任务已提交，共 " + request.getUrls().size() + " 个文件");
     }
 
@@ -58,6 +62,8 @@ public class ImportController {
         String url = request.get("url");
         String cookie = request.get("cookie");
         String browserMode = request.get("browserMode");
+        String deviceMode = request.get("deviceMode");
+        String cssSelector = request.get("cssSelector");
         
         if (url == null || url.isEmpty()) {
             return Result.error("URL不能为空");
@@ -65,9 +71,12 @@ public class ImportController {
         
         WebPageParserService.ParseResult result;
         if ("true".equals(browserMode)) {
-            result = browserPageParserService.parseWebPage(url, cookie);
+            result = browserPageParserService.parseWebPage(url, cookie, deviceMode, progress -> {
+                parseProgressWebSocketHandler.sendProgress(url, "progress", progress);
+            }, cssSelector);
+            parseProgressWebSocketHandler.sendProgress(url, "done", "解析完成");
         } else {
-            result = webPageParserService.parseWebPage(url, cookie);
+            result = webPageParserService.parseWebPage(url, cookie, cssSelector);
         }
         
         if (result.isSuccess()) {

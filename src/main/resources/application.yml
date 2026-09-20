@@ -2,7 +2,8 @@ server:
   port: 8085
   tomcat:
     reject-illegal-header: false
-    connection-timeout: 60000
+    connection-timeout: 120000
+    keep-alive-timeout: 120000
 
 sa-token:
   token-name: tgdrive      # token名称（默认：satoken）

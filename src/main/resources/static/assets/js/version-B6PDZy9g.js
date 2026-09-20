@@ -1,0 +1,1 @@
+const t="1.0.20",e="tgdrive_app_version";function o(){try{const o=localStorage.getItem(e);return!(!o||o===t)||(localStorage.setItem(e,t),!1)}catch{return!1}}function a(){localStorage.setItem(e,t)}export{t as A,o as c,a as m};

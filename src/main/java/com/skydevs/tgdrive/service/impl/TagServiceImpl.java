@@ -123,4 +123,10 @@ public class TagServiceImpl implements TagService {
     public List<Tag> listByFileId(String fileId) {
         return tagMapper.listByFileId(fileId);
     }
+
+    @Override
+    public Tag findByName(String name) {
+        if (name == null || name.trim().isEmpty()) return null;
+        return tagMapper.getByName(name.trim());
+    }
 }

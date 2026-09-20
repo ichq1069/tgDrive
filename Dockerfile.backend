@@ -9,23 +9,31 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Install Playwright system dependencies
+# Install ALL Playwright system dependencies for Chromium on Ubuntu 22.04
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    # Core dependencies
     libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
     libdbus-1-3 libxkbcommon0 libatspi2.0-0 libxcomposite1 libxdamage1 \
     libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
-    libwayland-client0 wget unzip fonts-liberation libappindicator3-1 \
-    xdg-utils libgtk-3-0 libgdk-pixbuf2.0-0 libpangocairo-1.0-0 \
+    # Additional dependencies
+    libwayland-client0 libxshmfence1 libssl3 libexpat1 \
+    libxcb1 libx11-6 libx11-xcb1 libxcb-dri3-0 libxcb-shm0 \
+    libxss1 libxtst6 libxi6 libxext6 \
+    # Fonts
+    fonts-liberation fonts-noto-cjk fonts-wqy-zenhei fonts-wqy-microhei \
+    # Tools
+    wget unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Chromium for Playwright
-RUN wget -q https://playwright.azureedge.net/builds/chromium/1155/chromium-linux.zip -O /tmp/chromium.zip \
-    && mkdir -p /ms-playwright/chromium-1155 \
-    && unzip -q /tmp/chromium.zip -d /ms-playwright/chromium-1155 \
-    && rm /tmp/chromium.zip \
-    && chmod +x /ms-playwright/chromium-1155/chrome-linux/chrome
-
+# Download Chromium matching Playwright 1.44.0 (build 1155)
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN mkdir -p /ms-playwright/chromium-1155 && \
+    cd /tmp && \
+    wget -q https://playwright.azureedge.net/builds/chromium/1155/chromium-linux.zip -O chromium.zip && \
+    unzip -q chromium.zip -d /ms-playwright/chromium-1155 && \
+    rm chromium.zip && \
+    chmod -R +x /ms-playwright/chromium-1155/ && \
+    ls /ms-playwright/chromium-1155/chrome-linux/chrome
 
 COPY --from=backend-builder /app/target/app.jar app.jar
 EXPOSE 8085

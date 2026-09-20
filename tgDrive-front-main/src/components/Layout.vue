@@ -7,6 +7,7 @@
           <el-icon class="logo-icon"><Cloudy /></el-icon>
           <div class="logo-text">
             <span class="main-title">TG-Drive</span>
+            <span class="version-badge">v{{ appVersion }}</span>
           </div>
         </div>
         <div class="actions">
@@ -127,12 +128,35 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import { Sunny, Moon, Cloudy, Monitor, SwitchButton, Menu, Folder, Upload, Lock, Box, Share, Picture, Link } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { APP_VERSION, checkVersionUpdate, markVersionSeen } from '@/version'
 
 type Theme = 'light' | 'dark' | 'auto'
 
 const router = useRouter()
 const theme = ref<Theme>('auto')
 const userStore = useUserStore()
+const appVersion = APP_VERSION
+
+// 版本更新检测
+const checkForUpdates = () => {
+  const hasUpdate = checkVersionUpdate()
+  if (hasUpdate) {
+    ElMessageBox.alert(
+      '页面已更新，刷新以获取最新版本。',
+      '版本更新',
+      {
+        confirmButtonText: '刷新页面',
+        type: 'info',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+      }
+    ).then(() => {
+      markVersionSeen()
+      window.location.reload()
+    }).catch(() => {})
+  }
+}
 
 // 使用store中的用户状态
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -231,6 +255,9 @@ onMounted(() => {
   // 移除背景设置加载，使用默认白色背景
   applyBackgroundSettings({})
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeChangeHandler)
+  
+  // 检查版本更新
+  checkForUpdates()
 })
 
 onBeforeUnmount(() => {
@@ -403,6 +430,13 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.version-badge {
+  font-size: 10px;
+  color: #909399;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .main-title {

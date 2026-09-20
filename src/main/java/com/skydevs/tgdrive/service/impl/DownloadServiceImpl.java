@@ -96,11 +96,16 @@ public class DownloadServiceImpl implements DownloadService {
                 }
                 return handleRegularFile(fileID, inputStream2, inputData);
             }
+        } catch (BotNotSetException e) {
+            log.error("Telegram Bot 未配置: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(null);
         } catch (IOException e) {
             log.error("下载文件失败：" + e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (NullPointerException e) {
-            throw new BotNotSetException();
+            log.error("下载文件时发生空指针异常", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
@@ -356,8 +361,9 @@ public class DownloadServiceImpl implements DownloadService {
             }
 
             if (contentType.startsWith("image/") || contentType.startsWith("video/")) {
-                // 对于图片和视频，设置 Content-Disposition 为 inline
+                // 对于图片和视频，设置 Content-Disposition 为 inline + 长期缓存
                 headers.setContentDisposition(ContentDisposition.inline().filename(filename, StandardCharsets.UTF_8).build());
+                headers.set(HttpHeaders.CACHE_CONTROL, "public, max-age=604800"); // 7天缓存
             } else {
                 // 使用 URLEncoder 编码文件名，确保支持中文
                 String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8.toString()).replace("+", "%20");

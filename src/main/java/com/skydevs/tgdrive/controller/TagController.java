@@ -63,4 +63,10 @@ public class TagController {
     public Result<List<Tag>> getFileTags(@PathVariable String fileId) {
         return Result.success(tagService.listByFileId(fileId));
     }
+
+    @SaCheckLogin
+    @GetMapping("/tags/public")
+    public Result<List<Tag>> listPublicTags() {
+        return Result.success(tagService.listAll());
+    }
 }

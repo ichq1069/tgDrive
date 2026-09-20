@@ -1,5 +1,6 @@
 package com.skydevs.tgdrive.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.skydevs.tgdrive.entity.TagRule;
 import com.skydevs.tgdrive.result.Result;
@@ -50,5 +51,21 @@ public class TagRuleController {
     public Result<Void> delete(@PathVariable Long id) {
         tagRuleService.delete(id);
         return Result.success();
+    }
+
+    @SaCheckLogin
+    @GetMapping("/public")
+    public Result<List<TagRule>> listPublic() {
+        return Result.success(tagRuleService.listAll());
+    }
+
+    @SaCheckLogin
+    @PostMapping("/match")
+    public Result<Map<String, List<Long>>> matchTags(@RequestBody List<String> filenames) {
+        Map<String, List<Long>> result = new java.util.HashMap<>();
+        for (String filename : filenames) {
+            result.put(filename, tagRuleService.matchTagsForFile(filename));
+        }
+        return Result.success(result);
     }
 }
