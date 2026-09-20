@@ -1,5 +1,5 @@
 // 版本配置 - 每次部署手动递增
-export const APP_VERSION = '1.0.20'
+export const APP_VERSION = '1.0.21'
 
 const VERSION_KEY = 'tgdrive_app_version'
 
